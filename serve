@@ -56,7 +56,7 @@ EOF
 declare -a args deps
 unset help update
 color="true"
-# deps+=("todo")
+deps+=("iptables")
 port="8080"
 
 # Check for missing dependencies
