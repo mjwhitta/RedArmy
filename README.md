@@ -22,6 +22,9 @@ That command will also displayed for you to copy and paste for
 convenience. Finally, you can deploy tools with commands like:
 
 ```
-PS> iex (Deploy-PowerView) # For ps1 scripts
-PS> Import-Module -Assembly (Get-ADModuleDLL) # For DLLs
+PS> iex (Get-PowerView) # Load ps1 script into current session
+PS> Deploy-PowerView <session> # Load ps1 script into session
+
+PS> Get-ADModuleDLL # Load DLL object into current session
+PS> Deploy-ADModuleDLL <session> # Load DLL object into session
 ```

