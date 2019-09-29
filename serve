@@ -176,6 +176,8 @@ url="http://$ip:$port"
 
 if [[ -n $(command -v git) ]] && [[ -n $update ]]; then
     git submodule update --init --recursive
+    git submodule foreach git checkout master
+    git submodule foreach git pull
 fi
 
 config="config.default"
