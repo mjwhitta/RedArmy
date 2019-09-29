@@ -199,7 +199,7 @@ if (($languagemode -match "constrained")) {
 $(
     while read -r name path; do
         deploy "$name" "$path"
-    done <"$config"; unset name path
+    done < <(grep -Psv "^\s*(#.*)?$" "$config"); unset name path
 )
 
 # Change prompt colors so user knows RedArmy is loaded in current
