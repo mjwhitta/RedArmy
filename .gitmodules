@@ -22,3 +22,7 @@
 	path = tools/ConPtyShell
 	url = https://github.com/antonioCoco/ConPtyShell.git
 	branch = master
+[submodule "tools/RACE"]
+	path = tools/RACE
+	url = https://github.com/samratashok/RACE.git
+	branch = master
