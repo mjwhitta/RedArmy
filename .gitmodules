@@ -26,3 +26,7 @@
 	path = tools/RACE
 	url = https://github.com/samratashok/RACE.git
 	branch = master
+[submodule "tools/DAMP"]
+	path = tools/DAMP
+	url = https://github.com/HarmJ0y/DAMP.git
+	branch = master

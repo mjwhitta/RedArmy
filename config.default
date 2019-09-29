@@ -2,6 +2,8 @@ ADModule         tools/ADModule/Microsoft.ActiveDirectory.Management.dll
 AMSIBypass       scripts/AMSIBypass.ps1
 BloodHound       tools/BloodHound/Ingestors/SharpHound.ps1
 ConPtyShell      tools/ConPtyShell/Invoke-ConPtyShell.ps1
+DAMPBackdoor     tools/DAMP/Add-RemoteRegBackdoor.ps1
+DAMPHashes       tools/DAMP/RemoteHashRetrieval.ps1
 DefenderDisabler scripts/DefenderDisabler.ps1
 Mimikatz         tools/PowerSploit/Exfiltration/Invoke-Mimikatz.ps1
 PowerCat         tools/powercat/powercat.ps1
