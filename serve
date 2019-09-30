@@ -83,6 +83,28 @@ EOF
             ;;
     esac
 
+    case "$action" in
+        "Invoke")
+            cat <<EOF
+function $action-${name}InBg {
+    Start-Job -ScriptBlock (
+        [scriptblock]::Create(
+            'Start-Process -ArgumentList "-c", (
+                [scriptblock]::Create(
+                    [System.Text.Encoding]::ASCII.GetString(
+                        (
+                            iwr -DisableKeepAlive -UseBasicParsing $url/$path
+                        ).content
+                    )
+                )
+            ) -NoNewWindow powershell'
+        )
+    )
+}
+EOF
+            ;;
+    esac
+
     cat <<EOF
 
 function Deploy-$name {
@@ -98,22 +120,12 @@ function Deploy-$name {
         [scriptblock]::Create(
 EOF
 
+    local def="(Get-Command $action-$name).definition"
+
     case "$action" in
-        "Get")
-            cat <<EOF
-            "iex (" + \$((Get-Command $action-$name).definition) + ")"
-EOF
-            ;;
-        "Import")
-            cat <<EOF
-            (Get-Command $action-$name).definition
-EOF
-            ;;
-        "Invoke")
-            cat <<EOF
-            \$((Get-Command $action-$name).definition)
-EOF
-            ;;
+        "Get") echo "\"iex (\" + \$($def) + \")\"" ;;
+        "Import") echo "$def" ;;
+        "Invoke") echo "\$($def)" ;;
     esac
 
     cat <<EOF
