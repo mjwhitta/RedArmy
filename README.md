@@ -15,6 +15,11 @@ $ git submodule foreach git pull # optional
 RedArmy uses `config.default` by default. You can copy it to `config`
 and delete or add lines as necessary.
 
+Any filepaths starting with `./` will create `Invoke` functions rather
+than `Get` functions. `Invoke` commands are generally for things that
+aren't scope specific such as modifying system settings. See [the
+default config](./config.default) for examples.
+
 ## Usage
 
 ```
@@ -44,6 +49,3 @@ convenience.
     - `Invoke-AMSIBypass`
 - Run ps1 script in session
     - `Deploy-AMSIBypass <session>`
-
-**Note:** `Invoke` commands are generally for things that aren't
-scope specific such as modifying system settings.
