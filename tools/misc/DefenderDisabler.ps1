@@ -10,8 +10,8 @@ if ($isAdmin) {
     if ($?) {
         echo "IOAVProtection disabled"
     } else {
-        echo "Disabling IOAVProtection failed"
+        throw "Disabling IOAVProtection failed"
     }
 } else {
-    echo "Run elevated to disable defender"
+    throw "Run elevated to disable defender"
 }

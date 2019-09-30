@@ -39,13 +39,13 @@ convenience.
 
 - Load ps1 script into current session
     - `iex (Get-PowerView)`
-- Load ps1 script into session
+- Load ps1 script into specified session
     - `Deploy-PowerView <session>`
 - Load DLL object into current session
     - `Import-ADModuleDLL`
-- Load DLL object into session
+- Load DLL object into specified session
     - `Deploy-ADModuleDLL <session>`
-- Run ps1 script
+- Run ps1 script in current session in background
     - `Invoke-AMSIBypass`
-- Run ps1 script in session
+- Run ps1 script in specified session in background
     - `Deploy-AMSIBypass <session>`

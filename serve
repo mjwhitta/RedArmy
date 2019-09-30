@@ -71,11 +71,13 @@ EOF
             ;;
         "Invoke")
             cat <<EOF
-    iex (
-        [System.Text.Encoding]::ASCII.GetString(
-            (
-                iwr -DisableKeepAlive -UseBasicParsing $url/$path
-            ).content
+    Start-Job -ScriptBlock (
+        [scriptblock]::Create(
+            [System.Text.Encoding]::ASCII.GetString(
+                (
+                    iwr -DisableKeepAlive -UseBasicParsing $url/$path
+                ).content
+            )
         )
     )
 }
@@ -94,7 +96,7 @@ function Deploy-$name {
         \$sess
     )
 
-    Invoke-Command -ScriptBlock (
+    Invoke-Command -AsJob -ScriptBlock (
         [scriptblock]::Create(
 EOF
 

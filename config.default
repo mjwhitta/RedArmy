@@ -4,7 +4,7 @@ BloodHound       tools/BloodHound/Ingestors/SharpHound.ps1
 ConPtyShell      tools/ConPtyShell/Invoke-ConPtyShell.ps1
 DAMPBackdoor     tools/DAMP/Add-RemoteRegBackdoor.ps1
 DAMPHashes       tools/DAMP/RemoteHashRetrieval.ps1
-DefenderDisabler ./toos/misc/DefenderDisabler.ps1
+DefenderDisabler ./tools/misc/DefenderDisabler.ps1
 Mimikatz         tools/PowerSploit/Exfiltration/Invoke-Mimikatz.ps1
 PowerCat         tools/powercat/powercat.ps1
 PowerShellTcp    tools/nishang/Shells/Invoke-PowerShellTcp.ps1
