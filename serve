@@ -140,7 +140,7 @@ Options:
     -p, --port=NUM     Use the specified port (default: 8080)
     -r, --rport=NUM    Use the specified port for reverse shell
                        (default: 4444)
-    -u, --update       Update git submodules (if git is installed)
+    -u, --update       Update git submodules
 
 EOF
     exit "$1"
@@ -149,6 +149,7 @@ EOF
 declare -a args deps
 unset help update
 color="true"
+deps+=("git")
 deps+=("iptables")
 port="8080"
 rport="4444"
@@ -178,7 +179,7 @@ done
 ip="$1"
 url="http://$ip:$port"
 
-if [[ -n $(command -v git) ]] && [[ -n $update ]]; then
+if [[ -n $update ]]; then
     git submodule update --init --recursive
     git submodule foreach git checkout master
     git submodule foreach git pull
