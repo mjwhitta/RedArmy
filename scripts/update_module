@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+module="$(basename "$(pwd)")"
+
+branch="$(
+grep -A 3 -hIiPs "submodule.+\"$module\"" ../../.gitmodules | \
+    grep -ioPs "branch\s*\=\s*\K.+"
+)"
+
+git checkout "$branch"
+git pull

@@ -2,9 +2,17 @@
 	path = tools/ADModule
 	url = https://github.com/samratashok/ADModule.git
 	branch = master
-[submodule "PowerSploit"]
-	path = tools/PowerSploit
-	url = https://github.com/PowerShellMafia/PowerSploit.git
+[submodule "BloodHound"]
+	path = tools/BloodHound
+	url = https://github.com/BloodHoundAD/BloodHound.git
+	branch = master
+[submodule "ConPtyShell"]
+	path = tools/ConPtyShell
+	url = https://github.com/antonioCoco/ConPtyShell.git
+	branch = master
+[submodule "DAMP"]
+	path = tools/DAMP
+	url = https://github.com/HarmJ0y/DAMP.git
 	branch = master
 [submodule "nishang"]
 	path = tools/nishang
@@ -14,19 +22,15 @@
 	path = tools/powercat
 	url = https://github.com/besimorhino/powercat.git
 	branch = master
-[submodule "BloodHound"]
-	path = tools/BloodHound
-	url = https://github.com/BloodHoundAD/BloodHound.git
+[submodule "PowerSploit"]
+	path = tools/PowerSploit
+	url = https://github.com/PowerShellMafia/PowerSploit.git
 	branch = master
-[submodule "ConPtyShell"]
-	path = tools/ConPtyShell
-	url = https://github.com/antonioCoco/ConPtyShell.git
-	branch = master
-[submodule "tools/RACE"]
+[submodule "PowerSploitDev"]
+	path = tools/PowerSploitDev
+	url = https://github.com/PowerShellMafia/PowerSploit.git
+	branch = dev
+[submodule "RACE"]
 	path = tools/RACE
 	url = https://github.com/samratashok/RACE.git
-	branch = master
-[submodule "tools/DAMP"]
-	path = tools/DAMP
-	url = https://github.com/HarmJ0y/DAMP.git
 	branch = master

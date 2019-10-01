@@ -10,5 +10,6 @@ PowerCat         tools/powercat/powercat.ps1
 PowerShellTcp    tools/nishang/Shells/Invoke-PowerShellTcp.ps1
 PowerUp          tools/PowerSploit/Privesc/PowerUp.ps1
 PowerView        tools/PowerSploit/Recon/PowerView.ps1
+PowerViewDev     tools/PowerSploitDev/Recon/PowerView.ps1
 RACE             tools/RACE/RACE.ps1
 SDPropagator     tools/misc/Invoke-SDPropagator.ps1
