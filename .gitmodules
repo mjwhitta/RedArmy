@@ -2,6 +2,10 @@
 	path = tools/ADModule
 	url = https://github.com/samratashok/ADModule.git
 	branch = master
+[submodule "ASREPRoast"]
+	path = tools/ASREPRoast
+	url = https://github.com/HarmJ0y/ASREPRoast.git
+	branch = master
 [submodule "BloodHound"]
 	path = tools/BloodHound
 	url = https://github.com/BloodHoundAD/BloodHound.git

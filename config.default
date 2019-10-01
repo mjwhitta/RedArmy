@@ -1,5 +1,6 @@
 ADModule         tools/ADModule/Microsoft.ActiveDirectory.Management.dll
 AMSIBypass       ./tools/misc/AMSIBypass.ps1
+ASREPRoast       tools/ASREPRoast/ASREPRoast.ps1
 BloodHound       tools/BloodHound/Ingestors/SharpHound.ps1
 ConPtyShell      tools/ConPtyShell/Invoke-ConPtyShell.ps1
 DAMPBackdoor     tools/DAMP/Add-RemoteRegBackdoor.ps1
