@@ -36,8 +36,10 @@ cleanup() {
 deploy() {
     local action
     local asjob
+    local iwr="iwr -DisableKeepAlive -UseBasicParsing"
     local name="$1"
     local path="$2"
+    local scriptblock
 
     case "$path" in
         *".dll") action="Import"; name="${name}DLL" ;;
@@ -45,69 +47,66 @@ deploy() {
         *".ps1"|*".psd1"|*."psm1") action="Get" ;;
     esac
 
-    cat <<EOF
-function $action-$name {
-EOF
-
+    # Build scriptblock
     case "$action" in
-        "Get")
-            cat <<EOF
-    [System.Text.Encoding]::ASCII.GetString(
-        (iwr -DisableKeepAlive -UseBasicParsing $url/$path).content
-    )
-}
-EOF
-            ;;
-        "Import")
-            cat <<EOF
-    Import-Module -Assembly (
-        [System.Reflection.Assembly]::Load(
-            (
-                iwr -DisableKeepAlive -UseBasicParsing $url/$path
-            ).content
-        )
-    )
-}
-EOF
-            ;;
-        "Invoke")
-            cat <<EOF
-    iex (
-        [System.Text.Encoding]::ASCII.GetString(
-            (
-                iwr -DisableKeepAlive -UseBasicParsing $url/$path
-            ).content
-        )
-    )
-}
-EOF
-            ;;
+        "Get") scriptblock+="\"iex (\" + \$(" ;;
+        "Invoke") scriptblock+="\$(" ;;
+    esac
+    scriptblock+="(Get-Command $action-$name).definition"
+    case $action in
+        "Get") scriptblock+=") + \")\"" ;;
+        "Invoke") scriptblock+=")" ;;
     esac
 
+    cat <<EOF
+function $action-$name {
+$(
     case "$action" in
-        "Invoke")
-            cat <<EOF
+        ("Get")
+            cat <<EOS
+    [System.Text.Encoding]::ASCII.GetString(($iwr $url/$path).content)
+EOS
+            ;;
+        ("Import")
+            cat <<EOS
+    Import-Module -Assembly (
+        [System.Reflection.Assembly]::Load(($iwr $url/$path).content)
+    )
+EOS
+            ;;
+        ("Invoke")
+            cat <<EOS
+    iex (
+        [System.Text.Encoding]::ASCII.GetString(
+            ($iwr $url/$path).content
+        )
+    )
+EOS
+            ;;
+    esac
+)
+}
+$(
+    case "$action" in
+        ("Invoke")
+            cat <<EOS
 function $action-${name}InBg {
     Start-Job -ScriptBlock (
         [scriptblock]::Create(
             'Start-Process -ArgumentList "-c", (
                 [scriptblock]::Create(
                     [System.Text.Encoding]::ASCII.GetString(
-                        (
-                            iwr -DisableKeepAlive -UseBasicParsing $url/$path
-                        ).content
+                        ($iwr $url/$path).content
                     )
                 )
             ) -NoNewWindow powershell'
         )
     )
 }
-EOF
+EOS
             ;;
     esac
-
-    cat <<EOF
-
+)
 function Deploy-$name {
     Param
     (
@@ -118,20 +117,18 @@ function Deploy-$name {
     )
 
     Invoke-Command ${asjob:+-AsJob }-ScriptBlock (
-        [scriptblock]::Create(
-EOF
-
-    local def="(Get-Command $action-$name).definition"
-
-    case "$action" in
-        "Get") echo "\"iex (\" + \$($def) + \")\"" ;;
-        "Import") echo "$def" ;;
-        "Invoke") echo "\$($def)" ;;
-    esac
-
-    cat <<EOF
-        )
+        [scriptblock]::Create($scriptblock)
     ) -Session \$sess
+$(
+    case "$action" in
+        ("Invoke")
+            cat <<EOS
+    sleep 1
+    Get-Job | select -last 1 | Receive-Job
+EOS
+            ;;
+    esac
+)
 }
 
 EOF
