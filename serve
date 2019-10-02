@@ -35,12 +35,13 @@ cleanup() {
 
 deploy() {
     local action
+    local asjob
     local name="$1"
     local path="$2"
 
     case "$path" in
         *".dll") action="Import"; name="${name}DLL" ;;
-        "./"*".ps1") action="Invoke" ;;
+        "./"*".ps1") action="Invoke"; asjob="true" ;;
         *".ps1"|*".psd1"|*."psm1") action="Get" ;;
     esac
 
@@ -116,7 +117,7 @@ function Deploy-$name {
         \$sess
     )
 
-    Invoke-Command -AsJob -ScriptBlock (
+    Invoke-Command ${asjob:+-AsJob }-ScriptBlock (
         [scriptblock]::Create(
 EOF
 
