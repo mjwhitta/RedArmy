@@ -2,10 +2,14 @@
 
 module="$(basename "$(pwd)")"
 
-branch="$(
-grep -A 3 -hIiPs "submodule.+\"$module\"" ../../.gitmodules | \
-    grep -ioPs "branch\s*\=\s*\K.+"
+target_branch="$(
+    grep -A 3 -hIiPs "submodule.+\"$module\"" ../../.gitmodules | \
+        grep -ioPs "branch\s*\=\s*\K.+"
 )"
 
-git checkout "$branch"
+case "$(git branch --show-current)" in
+    "$target_branch") ;;
+    *) git checkout "$target_branch" ;;
+esac
+
 git pull

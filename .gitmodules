@@ -1,6 +1,6 @@
 [submodule "ADModule"]
 	path = tools/ADModule
-	url = https://github.com/samratashok/ADModule.git
+	url = https://github.com/mjwhitta/ADModule.git
 	branch = master
 [submodule "ASREPRoast"]
 	path = tools/ASREPRoast
