@@ -256,7 +256,7 @@ $(
     deploy ReverseShell "./$rshell_ps1"
 
     # Add invade shell function
-    deploy Invade "$invade_ps1"
+    deploy RedArmy "$invade_ps1"
 )
 
 # Change prompt colors so user knows RedArmy is loaded in current
