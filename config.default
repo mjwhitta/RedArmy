@@ -1,17 +1,17 @@
-ADModule                  tools/ADModule/Microsoft.ActiveDirectory.Management.dll
-AMSIBypass                ./tools/misc/AMSIBypass.ps1
-ASREPRoast                tools/ASREPRoast/ASREPRoast.ps1
-BloodHound                tools/BloodHound/Ingestors/SharpHound.ps1
-ConPtyShell               tools/ConPtyShell/Invoke-ConPtyShell.ps1
-DAMPBackdoor              tools/DAMP/Add-RemoteRegBackdoor.ps1
-DAMPHashes                tools/DAMP/RemoteHashRetrieval.ps1
-DisableIOAVProtection     ./tools/misc/DisableIOAVProtection.ps1
-DisableRealTimeMonitoring ./tools/misc/DisableRealTimeMonitoring.ps1
-Mimikatz                  tools/PowerSploit/Exfiltration/Invoke-Mimikatz.ps1
-PowerCat                  tools/powercat/powercat.ps1
-PowerShellTcp             tools/nishang/Shells/Invoke-PowerShellTcp.ps1
-PowerUp                   tools/PowerSploit/Privesc/PowerUp.ps1
-PowerView                 tools/PowerSploit/Recon/PowerView.ps1
-PowerViewDev              tools/PowerSploitDev/Recon/PowerView.ps1
-RACE                      tools/RACE/RACE.ps1
-SDPropagator              tools/misc/Invoke-SDPropagator.ps1
+ADModule                  get-bin tools/ADModule/Microsoft.ActiveDirectory.Management.dll
+AMSIBypass                run     tools/misc/AMSIBypass.ps1
+ASREPRoast                get     tools/ASREPRoast/ASREPRoast.ps1
+BloodHound                get     tools/BloodHound/Ingestors/SharpHound.ps1
+ConPtyShell               get     tools/ConPtyShell/Invoke-ConPtyShell.ps1
+DAMPBackdoor              get     tools/DAMP/Add-RemoteRegBackdoor.ps1
+DAMPHashes                get     tools/DAMP/RemoteHashRetrieval.ps1
+DisableIOAVProtection     run     tools/misc/DisableIOAVProtection.ps1
+DisableRealTimeMonitoring run     tools/misc/DisableRealTimeMonitoring.ps1
+Mimikatz                  get     tools/PowerSploit/Exfiltration/Invoke-Mimikatz.ps1
+PowerCat                  get     tools/powercat/powercat.ps1
+PowerShellTcp             get     tools/nishang/Shells/Invoke-PowerShellTcp.ps1
+PowerUp                   get     tools/PowerSploit/Privesc/PowerUp.ps1
+PowerView                 get     tools/PowerSploit/Recon/PowerView.ps1
+PowerViewDev              get     tools/PowerSploitDev/Recon/PowerView.ps1
+RACE                      get     tools/RACE/RACE.ps1
+SDPropagator              get     tools/misc/Invoke-SDPropagator.ps1

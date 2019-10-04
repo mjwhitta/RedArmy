@@ -11,18 +11,71 @@ $ git submodule foreach ../../scripts/update_module # optional
 
 ## Configuration
 
-RedArmy uses `config.default` by default. You can copy it to `config`
-and delete or add lines as necessary.
+RedArmy uses `config.default` as [the default config]. You can copy it
+to `config` and add or delete lines as necessary.
 
-Any filepaths starting with `./` will create `Invoke` functions rather
-than `Get` functions. `Invoke` commands are generally for things that
-aren't scope specific such as modifying system settings. See [the
-default config](./config.default) for examples.
+Config entries look like the following:
+
+```
+name action path
+```
+
+Name and path are fairly self-explanatory. Actions are as follows:
+
+- `get`
+    - Creates
+        - `Get-<name>`
+            - Get file contents
+        - `Deploy-<name>`
+            - Create ScriptBlock and run in provided PSSession
+- `get-bin`
+    - Creates
+        - `Import-<name>`
+            - Create assembly object and load into memory
+        - `Deploy-<name>`
+            - Create assembly object and load into memory in provided
+              PSSession
+- `run`
+    - Creates
+        - `Get-<name>`
+            - Get file contents
+        - `Invoke-<name>`
+            - Run `iex` on file contents
+        - `Invoke-<name>InBg`
+            - Run `iex` on file contents in background
+        - `Deploy-<name>`
+            - Create ScriptBlock and run in provided PSSession
+        - `Deploy-<name>InBg`
+            - Create ScriptBlock and run in provided PSSession in
+              background
+- `run-bin`
+    - Not yet implemented
+
+See [the default config] for examples. See [Examples](#examples) for
+more details on how to use these functions.
+
+[the default config]: ./config.default
 
 ## Usage
 
 ```
-$ ./serve [--port PORT] [--update] <ip>
+$ ./serve -h
+Usage: serve [OPTIONS] <ip>
+
+Spin up a simple HTTP server to host the RedArmy scripts.
+
+Options:
+    -c, --config=FILE    Use the specified config
+    -h, --help           Display this help message
+    --invade=FILE        Use the specified invade filename instead of
+                         invade.ps1
+    --no-color           Disable colorized output
+    -p, --port=NUM       Use the specified port (default: 8080)
+    -r, --rport=NUM      Use the specified port for reverse shell
+                         (default: 4444)
+    --rshell=FILE        Use the specified rshell filename instead of
+                         rshell.ps1
+    -u, --update         Update git submodules
 ```
 
 Once the `serve` script is running, you can use the following to load
@@ -40,10 +93,10 @@ convenience.
     - `iex (Get-PowerView)`
 - Load ps1 script into specified session
     - `Deploy-PowerView <session>`
-- Load DLL object into current session
-    - `Import-ADModuleDLL`
-- Load DLL object into specified session
-    - `Deploy-ADModuleDLL <session>`
+- Load binary object into current session
+    - `Import-ADModule`
+- Load binary object into specified session
+    - `Deploy-ADModule <session>`
 - Run ps1 script in current session
     - `Invoke-AMSIBypass`
 - Run ps1 script in current session in background
