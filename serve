@@ -168,13 +168,13 @@ Options:
     -c, --config=FILE    Use the specified config
     -h, --help           Display this help message
     --invade=FILE        Use the specified invade filename instead of
-                         invade.ps1
+                         invade.html
     --no-color           Disable colorized output
     -p, --port=NUM       Use the specified port (default: 8080)
     -r, --rport=NUM      Use the specified port for reverse shell
                          (default: 4444)
     --rshell=FILE        Use the specified rshell filename instead of
-                         rshell.ps1
+                         rshell.html
     -u, --update         Update git submodules
 
 EOF
@@ -187,10 +187,10 @@ color="true"
 config="config.default"
 deps+=("git")
 deps+=("iptables")
-invade_ps1="invade.ps1"
+invade_ps1="invade.html"
 port="8080"
 rport="4444"
-rshell_ps1="rshell.ps1"
+rshell_ps1="rshell.html"
 
 # Check for missing dependencies
 check_deps

