@@ -62,20 +62,26 @@ more details on how to use these functions.
 $ ./serve -h
 Usage: serve [OPTIONS] <ip>
 
-Spin up a simple HTTP server to host the RedArmy scripts.
+Spin up a simple HTTP(S) server to host the RedArmy scripts.
 
 Options:
+    --cert=PEM           Use the specified cert PEM file for TLS,
+                         implies --tls, requires --key
     -c, --config=FILE    Use the specified config
     -h, --help           Display this help message
     --invade=FILE        Use the specified invade filename instead of
                          invade.html
+    --key=PEM            Use the specified key PEM file for TLS,
+                         implies --tls, requires --cert
     --no-color           Disable colorized output
-    -p, --port=NUM       Use the specified port (default: 8080)
+    -p, --port=NUM       Use the specified port (default: 8080 for
+                         HTTP, 8443 for TLS)
     -r, --rport=NUM      Use the specified port for reverse shell
                          (default: 4444)
     --rshell=FILE        Use the specified rshell filename instead of
                          rshell.html
-    -u, --update         Update git submodules
+    --tls                Use TLS
+    -u, --update         Update git submodules before starting server
 ```
 
 Once the `serve` script is running, you can use the following to load

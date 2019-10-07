@@ -10,6 +10,10 @@
 	path = tools/BloodHound
 	url = https://github.com/BloodHoundAD/BloodHound.git
 	branch = master
+[submodule "certifyme"]
+	path = certifyme
+	url = https://gitlab.com/mjwhitta/certifyme.git
+	branch = master
 [submodule "ConPtyShell"]
 	path = tools/ConPtyShell
 	url = https://github.com/antonioCoco/ConPtyShell.git

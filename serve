@@ -145,16 +145,36 @@ deploy_run_bin() {
 }
 
 simplehttp() {
+    local port="$1"
+
     if [[ -n $(command -v ruby) ]]; then
-        ruby -e httpd -r un -- -p "$1"
+        ruby -e httpd -r un -- -p "$port" \
+            ${tls:+--ssl-certificate "$certfile"} \
+            ${tls:+--ssl-private-key "$keyfile"}
     elif [[ -n $(command -v python3) ]]; then
-        python3 -m http.server "$1"
-    elif [[ -n $(command -v python2) ]]; then
-        python2 -m SimpleHTTPServer "$1"
-    elif [[ -n $(command -v php) ]]; then
-        php -S 0.0.0.0:"$1"
-    else
-        errx 99 "Can't find php, python2, python3, or ruby"
+        if [[ -z $tls ]]; then
+            python3 -m http.server "$port"
+        else
+            python3 -c "$(
+                cat <<EOF
+import http.server
+import ssl
+
+httpd = http.server.HTTPServer(
+    ("0.0.0.0", $port),
+    http.server.SimpleHTTPRequestHandler
+)
+httpd.socket = ssl.wrap_socket(
+    httpd.socket,
+    certfile="$certfile",
+    keyfile="$keyfile",
+    server_side=True,
+    ssl_version=ssl.PROTOCOL_TLS
+)
+httpd.serve_forever()
+EOF
+            )"
+        fi
     fi
 }
 
@@ -162,33 +182,39 @@ usage() {
     cat <<EOF
 Usage: ${0##*/} [OPTIONS] <ip>
 
-Spin up a simple HTTP server to host the RedArmy scripts.
+Spin up a simple HTTP(S) server to host the RedArmy scripts.
 
 Options:
+    --cert=PEM           Use the specified cert PEM file for TLS,
+                         implies --tls, requires --key
     -c, --config=FILE    Use the specified config
     -h, --help           Display this help message
     --invade=FILE        Use the specified invade filename instead of
                          invade.html
+    --key=PEM            Use the specified key PEM file for TLS,
+                         implies --tls, requires --cert
     --no-color           Disable colorized output
-    -p, --port=NUM       Use the specified port (default: 8080)
+    -p, --port=NUM       Use the specified port (default: 8080 for
+                         HTTP, 8443 for TLS)
     -r, --rport=NUM      Use the specified port for reverse shell
                          (default: 4444)
     --rshell=FILE        Use the specified rshell filename instead of
                          rshell.html
-    -u, --update         Update git submodules
+    --tls                Use TLS
+    -u, --update         Update git submodules before starting server
 
 EOF
     exit "$1"
 }
 
 declare -a args deps
-unset help update
+unset help certfile keyfile tls update
 color="true"
 config="config.default"
 deps+=("git")
 deps+=("iptables")
+deps+=("realpath")
 invade_ps1="invade.html"
-port="8080"
 rport="4444"
 rshell_ps1="rshell.html"
 
@@ -199,13 +225,27 @@ check_deps
 while [[ $# -gt 0 ]]; do
     case "$1" in
         "--") shift && args+=("$@") && break ;;
-        "-c"|"--config"*) config="$(long_opt "$@")" || shift ;;
+        "--cert"*)
+            certfile="$(long_opt "$@")" || shift
+            certfile="$(realpath "$certfile")"
+            tls="true"
+            ;;
+        "-c"|"--config"*)
+            config="$(long_opt "$@")" || shift
+            config="$(realpath "$config")"
+            ;;
         "-h"|"--help") help="true" ;;
         "--invade"*) invade_ps1="$(long_opt "$@")" || shift ;;
+        "--key"*)
+            keyfile="$(long_opt "$@")" || shift
+            keyfile="$(realpath "$keyfile")"
+            tls="true"
+            ;;
         "--no-color") unset color ;;
         "-p"|"--port"*) port="$(long_opt "$@")" || shift ;;
         "-r"|"--rport"*) rport="$(long_opt "$@")" || shift ;;
         "--rshell"*) rshell_ps1="$(long_opt "$@")" || shift ;;
+        "--tls") tls="true" ;;
         "-u"|"--update"*) update="true" ;;
         *) args+=("$1") ;;
     esac
@@ -217,12 +257,42 @@ done
 [[ -z $help ]] || usage 0
 [[ $# -eq 1 ]] || usage 1
 
+# Save IP and URL
+ip="$1"
+if [[ -z $port ]]; then
+    port="8080"
+    [[ -z $tls ]] || port="8443"
+fi
+url="http${tls:+s}://$ip:$port"
+
 # Make sure in serve directory
 cd "$(dirname "$0")" || errx 2 "You're doing something horribly wrong"
 
-# Save IP and URL
-ip="$1"
-url="http://$ip:$port"
+# Need python3 or ruby for http(s) server
+if [[ -z $(command -v ruby) ]] && [[ -z $(command -v python3) ]]
+then
+    errx 3 "Can't find python3 or ruby"
+fi
+
+# Ensure certfile and keyfile exist if using TLS
+if [[ -n $tls ]]; then
+    if [[ -z $certfile ]] && [[ -z $keyfile ]]; then
+        if [[ ! -f certifyme/certify ]]; then
+            errx 4 "CertifyMe was not found, initialize submodules"
+        fi
+        certifyme/certify -p pki "$ip" || errx $? "CertifyMe error"
+        certfile="pki/certs/$ip.cert.pem"
+        keyfile="pki/private/$ip.key.pem"
+    elif [[ -z $certfile ]] || [[ -z $keyfile ]]; then
+        errx 5 "You need to specify both cert and key"
+    fi
+
+    if [[ ! -f $certfile ]]; then
+        errx 6 "Specified cert PEM file doesn't exist"
+    elif [[ ! -f $keyfile ]]; then
+        errx 7 "Specified key PEM file doesn't exist"
+    fi
+fi
 
 # Update submodules
 if [[ -n $update ]]; then
@@ -238,6 +308,7 @@ esac
 # Save some variables for convenience
 cwd="\$ExecutionContext.SessionState.Path.CurrentLocation"
 iwr="iwr -DisableKeepAlive -UseBasicParsing"
+[[ -z $tls ]] || iwr+=" -SkipCertificateCheck"
 languagemode="\$ExecutionContext.SessionState.LanguageMode"
 red="\$([char]27)[41m"
 reset="\$([char]27)[0m"
@@ -288,4 +359,9 @@ sudo iptables -I INPUT -p tcp -d "$ip" --dport "$port" -j ACCEPT
 sudo iptables -I INPUT -p tcp -d "$ip" --dport "$rport" -j ACCEPT
 
 # Serve via HTTP
-simplehttp "$port" || cleanup
+simplehttp "$port"
+
+# Cleanup unless ^C
+case "$?" in
+    "130") cleanup ;;
+esac
