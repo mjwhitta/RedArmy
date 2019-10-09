@@ -270,9 +270,15 @@ url="http${tls:+s}://$ip:$port"
 cd "$(dirname "$0")" || errx 2 "You're doing something horribly wrong"
 
 # Need python3 or ruby for http(s) server
-if [[ -z $(command -v ruby) ]] && [[ -z $(command -v python3) ]]
+if [[ -z $(command -v python3) ]] && [[ -z $(command -v ruby) ]]
 then
     errx 3 "Can't find python3 or ruby"
+fi
+
+# Update submodules
+if [[ -n $update ]]; then
+    git submodule update --init --recursive
+    git submodule foreach "$(pwd)/scripts/update_module"
 fi
 
 # Ensure certfile and keyfile exist if using TLS
@@ -293,12 +299,6 @@ if [[ -n $tls ]]; then
     elif [[ ! -f $keyfile ]]; then
         errx 7 "Specified key PEM file doesn't exist"
     fi
-fi
-
-# Update submodules
-if [[ -n $update ]]; then
-    git submodule update --init --recursive
-    git submodule foreach ../../scripts/update_module
 fi
 
 # Use "./config" if it exists and a config wasn't specified

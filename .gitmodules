@@ -10,7 +10,7 @@
 	path = tools/BloodHound
 	url = https://github.com/BloodHoundAD/BloodHound.git
 	branch = master
-[submodule "certifyme"]
+[submodule "CertifyMe"]
 	path = certifyme
 	url = https://gitlab.com/mjwhitta/certifyme.git
 	branch = master

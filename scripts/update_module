@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-module="$(basename "$(pwd)")"
+# shellcheck disable=SC2154
 
 target_branch="$(
-    grep -A 3 -hIiPs "submodule.+\"$module\"" ../../.gitmodules | \
-        grep -ioPs "branch\s*\=\s*\K.+"
+    grep -A 3 -hIiPs "submodule \"$name\"" "$toplevel/.gitmodules" | \
+    grep -ioPs "branch\s*\=\s*\K.+"
 )"
 
 case "$(git branch --show-current)" in
