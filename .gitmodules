@@ -38,6 +38,10 @@
 	path = tools/PowerSploitDev
 	url = https://github.com/PowerShellMafia/PowerSploit.git
 	branch = dev
+[submodule "PowerUpSQL"]
+	path = tools/PowerUpSQL
+	url = https://github.com/NetSPI/PowerUpSQL.git
+	branch = master
 [submodule "RACE"]
 	path = tools/RACE
 	url = https://github.com/samratashok/RACE.git

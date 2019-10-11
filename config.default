@@ -11,6 +11,7 @@ Mimikatz                  get     tools/PowerSploit/Exfiltration/Invoke-Mimikatz
 PowerCat                  get     tools/powercat/powercat.ps1
 PowerShellTcp             get     tools/nishang/Shells/Invoke-PowerShellTcp.ps1
 PowerUp                   get     tools/PowerSploit/Privesc/PowerUp.ps1
+PowerUpSQL                get     tools/PowerUpSQL/PowerUpSQL.ps1
 PowerView                 get     tools/PowerSploit/Recon/PowerView.ps1
 PowerViewDev              get     tools/PowerSploitDev/Recon/PowerView.ps1
 RACE                      get     tools/RACE/RACE.ps1
