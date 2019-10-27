@@ -205,7 +205,7 @@ Options:
                          invade.html
     --key=PEM            Use the specified key PEM file for TLS,
                          implies --tls, requires --cert
-    --ngrok              Use ngrok for TLS (ensure ssh is
+    -n, --ngrok          Use ngrok for TLS (ensure ssh is
                          pre-configured)
     --no-color           Disable colorized output
     -p, --port=NUM       Use the specified port (default: 8080 for
@@ -257,7 +257,7 @@ while [[ $# -gt 0 ]]; do
             keyfile="$(realpath "$keyfile")"
             tls="true"
             ;;
-        "--ngrok") ngrok="true" ;;
+        "-n"|"--ngrok") ngrok="true" ;;
         "--no-color") unset color ;;
         "-p"|"--port"*) port="$(long_opt "$@")" || shift ;;
         "-r"|"--rport"*) rport="$(long_opt "$@")" || shift ;;
