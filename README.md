@@ -6,7 +6,7 @@
 $ git clone https://gitlab.com/mjwhitta/redarmy.git
 $ cd ./redarmy
 $ git submodule update --init --recursive
-$ git submodule foreach ../../scripts/update_module # optional
+$ git submodule foreach "$(pwd)/scripts/update_module" # optional
 ```
 
 ## Configuration
@@ -73,6 +73,8 @@ Options:
                          invade.html
     --key=PEM            Use the specified key PEM file for TLS,
                          implies --tls, requires --cert
+    -n, --ngrok          Use ngrok for TLS (ensure ssh is
+                         pre-configured)
     --no-color           Disable colorized output
     -p, --port=NUM       Use the specified port (default: 8080 for
                          HTTP, 8443 for TLS)
@@ -80,6 +82,8 @@ Options:
                          (default: 4444)
     --rshell=FILE        Use the specified rshell filename instead of
                          rshell.html
+    --skip-validation    Disable TLS certificate validation (for use
+                         with self-signed certs)
     --tls                Use TLS
     -u, --update         Update git submodules before starting server
 ```
