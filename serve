@@ -30,6 +30,10 @@ cleanup() {
     rm -rf "$invade_ps1" "$rshell_ps1"
     find . -ipath "./[^.]*" -type d -empty -delete
 
+    # Close firewall for HTTP(S)
+    subinfo "Closing $port on $ip interface (using sudo)"
+    sudo iptables -D INPUT -p tcp -d "$ip" --dport "$port" -j ACCEPT
+
     # Close firewall for reverse shell
     subinfo "Closing $rport on $ip interface (using sudo)"
     sudo iptables -D INPUT -p tcp -d "$ip" --dport "$rport" -j ACCEPT
@@ -37,14 +41,7 @@ cleanup() {
     if [[ -n $ngrok ]]; then
         # Kill ssh connection
         pkill -f "ssh\s-f.+-R.+:$port\s.*ngrok\.com\shttp"
-
-        # ngrok doesn't need firewall for HTTP(S) so return
-        return
     fi
-
-    # Close firewall for HTTP(S)
-    subinfo "Closing $port on $ip interface (using sudo)"
-    sudo iptables -D INPUT -p tcp -d "$ip" --dport "$port" -j ACCEPT
 }
 
 deploy() {
@@ -380,11 +377,9 @@ function prompt {
 }
 EOF
 
-if [[ -z $ngrok ]]; then
-    # Open firewall for HTTP(S)
-    subinfo "Opening $port on $ip interface (using sudo)"
-    sudo iptables -I INPUT -p tcp -d "$ip" --dport "$port" -j ACCEPT
-fi
+# Open firewall for HTTP(S)
+subinfo "Opening $port on $ip interface (using sudo)"
+sudo iptables -I INPUT -p tcp -d "$ip" --dport "$port" -j ACCEPT
 
 # Open firewall for reverse shell
 subinfo "Opening $rport on $ip interface (using sudo)"
