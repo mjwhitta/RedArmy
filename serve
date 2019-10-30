@@ -293,10 +293,7 @@ then
 fi
 
 # Update submodules
-if [[ -n $update ]]; then
-    git submodule update --init --recursive
-    git submodule foreach "$(pwd)/scripts/update_module"
-fi
+[[ -z $update ]] || ./scripts/update
 
 # Ensure certfile and keyfile exist if using TLS
 if [[ -n $tls ]]; then

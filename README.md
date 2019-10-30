@@ -5,8 +5,7 @@
 ```
 $ git clone https://gitlab.com/mjwhitta/redarmy.git
 $ cd ./redarmy
-$ git submodule update --init --recursive
-$ git submodule foreach "$(pwd)/scripts/update_module" # optional
+$ ./scripts/update
 ```
 
 ## Configuration
