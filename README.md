@@ -1,5 +1,7 @@
 # RedArmy
 
+<a href="https://www.buymeacoffee.com/mjwhitta">🍪 Buy me a cookie</a>
+
 ## Installation
 
 ```
