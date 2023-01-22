@@ -5,7 +5,7 @@
 ## Installation
 
 ```
-$ git clone https://gitlab.com/mjwhitta/redarmy.git
+$ git clone https://github.com/mjwhitta/redarmy.git
 $ cd ./redarmy
 $ ./scripts/update
 ```
